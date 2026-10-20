@@ -100,7 +100,7 @@ export default function SocialAssetGenerator() {
     if (isForum) {
       headlineScale = normalizedHeadline.includes('Connecting with experts') ? 1.08 : 1.2;
     } else if (isCloud) {
-      headlineScale = isCloudNoLogo ? 1.8 : 1.44;
+      headlineScale = isCloudNoLogo ? 1.4 : 1.44;
     } else if (isAccelerator) {
       headlineScale = headlineLen <= 13 ? 1.575 : 0.96;
     }
@@ -124,7 +124,7 @@ export default function SocialAssetGenerator() {
     }
   } else {
     if (isCloud) {
-      headlineScale = isCloudNoLogo ? 1.1 : 1.2;
+      headlineScale = isCloudNoLogo ? 1.0 : 1.2;
     } else if (isAccelerator) {
       headlineScale = headlineLen <= 13 ? 1.0 : 0.8;
     } else {
@@ -511,37 +511,49 @@ export default function SocialAssetGenerator() {
         }
 
         ctx.fillStyle = '#FFFFFF';
-        ctx.font = `500 ${canvasHeadlineSize}px "Google Sans Flex", sans-serif`;
+        
+        if (isCloudNoLogo) {
+            // "We're building" -> Normal size
+            ctx.font = `500 ${canvasHeadlineSize}px "Google Sans Flex", sans-serif`;
+            ctx.fillText("We're building", actualLogoX, mainCopyY);
+            
+            // "faster" -> 2.2x scale, tighter line gap
+            const fasterSize = canvasHeadlineSize * 2.2;
+            ctx.font = `500 ${fasterSize}px "Google Sans Flex", sans-serif`;
+            const fasterX = isCenteredLayout ? actualLogoX : actualLogoX + (exportWidth * 0.12);
+            ctx.fillText("faster", fasterX, mainCopyY + (fasterSize * 0.85));
+        } else {
+            ctx.font = `500 ${canvasHeadlineSize}px "Google Sans Flex", sans-serif`;
+            const maxWidth = exportWidth * (
+              isForum && selectedFormat === '16:9'
+                ? 0.60
+                : selectedFormat === '16:9'
+                ? 0.62
+                : isCenteredLayout
+                ? 0.90
+                : 0.82
+            );
+            const rawLines = headlineToRender.split('\n');
+            let currentY = mainCopyY;
+            const lineWrapStep = Math.round(canvasHeadlineSize * 1.15);
 
-        const maxWidth = exportWidth * (
-          isForum && selectedFormat === '16:9'
-            ? 0.60
-            : selectedFormat === '16:9'
-            ? 0.62
-            : isCenteredLayout
-            ? 0.90
-            : 0.82
-        );
-        const rawLines = headlineToRender.split('\n');
-        let currentY = mainCopyY;
-        const lineWrapStep = Math.round(canvasHeadlineSize * 1.15);
-
-        for (const rawLine of rawLines) {
-          const words = rawLine.split(' ');
-          let line = '';
-          for (let n = 0; n < words.length; n++) {
-            const testLine = line + words[n] + ' ';
-            const metrics = ctx.measureText(testLine);
-            if (metrics.width > maxWidth && n > 0) {
+            for (const rawLine of rawLines) {
+              const words = rawLine.split(' ');
+              let line = '';
+              for (let n = 0; n < words.length; n++) {
+                const testLine = line + words[n] + ' ';
+                const metrics = ctx.measureText(testLine);
+                if (metrics.width > maxWidth && n > 0) {
+                  ctx.fillText(line, actualLogoX, currentY);
+                  line = words[n] + ' ';
+                  currentY += lineWrapStep;
+                } else {
+                  line = testLine;
+                }
+              }
               ctx.fillText(line, actualLogoX, currentY);
-              line = words[n] + ' ';
               currentY += lineWrapStep;
-            } else {
-              line = testLine;
             }
-          }
-          ctx.fillText(line, actualLogoX, currentY);
-          currentY += lineWrapStep;
         }
 
         if (currentSupportingText) {
@@ -552,9 +564,14 @@ export default function SocialAssetGenerator() {
             : isAcc9to16
             ? 32 
             : 40;
+            
+          const suppY = isCloudNoLogo 
+            ? mainCopyY + (canvasHeadlineSize * 2.2 * 0.85) + 60 
+            : mainCopyY + (canvasHeadlineSize * 1.15) * headlineToRender.split('\n').length;
+            
           ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
           ctx.font = `500 ${supportingFontSize}px "Google Sans Flex", sans-serif`;
-          ctx.fillText(currentSupportingText, actualLogoX, currentY - Math.round(lineWrapStep * 0.3) + 12);
+          ctx.fillText(currentSupportingText, actualLogoX, suppY);
         }
 
         if (userImg && !isCloudNoLogo) {
@@ -886,17 +903,35 @@ export default function SocialAssetGenerator() {
 
               {!isForum && (
                 <div className={copyPlacementClass}>
-                  <h2
-                    style={{
-                      '--base-size': `${baseSizeRem}rem`,
-                      fontSize: `calc(var(--base-size) * ${headlineScale})`,
-                    } as React.CSSProperties}
-                    className={`text-white font-medium ${headlineClass} leading-[1.04] tracking-tight drop-shadow-sm transition-all duration-300 ${isCenteredLayout ? 'text-center' : 'text-left'}`}
-                  >
-                    {headlineToRender.split('\n').map((line, i) => (
-                        <span key={i} className="block whitespace-nowrap">{line}</span>
-                    ))}
-                  </h2>
+                  {isCloudNoLogo ? (
+                    <div className={`text-white font-medium drop-shadow-sm transition-all duration-300 ${isCenteredLayout ? 'text-center w-full' : 'text-left'}`}>
+                      <div style={{ fontSize: `calc(var(--base-size) * ${headlineScale})`, lineHeight: 1.04, tracking: 'tight' }}>
+                        We're building
+                      </div>
+                      <div style={{ 
+                        fontSize: `calc(var(--base-size) * ${headlineScale} * 2.2)`, 
+                        lineHeight: 0.9, 
+                        marginLeft: isCenteredLayout ? '0' : '10%',
+                        marginTop: '4px',
+                        tracking: 'tight' 
+                      }}>
+                        faster
+                      </div>
+                    </div>
+                  ) : (
+                    <h2
+                      style={{
+                        '--base-size': `${baseSizeRem}rem`,
+                        fontSize: `calc(var(--base-size) * ${headlineScale})`,
+                      } as React.CSSProperties}
+                      className={`text-white font-medium ${headlineClass} leading-[1.04] tracking-tight drop-shadow-sm transition-all duration-300 ${isCenteredLayout ? 'text-center' : 'text-left'}`}
+                    >
+                      {headlineToRender.split('\n').map((line, i) => (
+                          <span key={i} className="block whitespace-nowrap">{line}</span>
+                      ))}
+                    </h2>
+                  )}
+
                   {currentSupportingText && !isCloudNoLogo && (
                     <p className={`mt-2.5 sm:mt-3 text-white/90 font-medium ${supportingTextSizeClass} leading-snug tracking-normal drop-shadow-sm transition-all duration-300 ${isCenteredLayout ? 'text-center' : 'text-left'}`}>
                       {currentSupportingText}
