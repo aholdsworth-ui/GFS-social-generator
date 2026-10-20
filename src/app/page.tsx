@@ -90,6 +90,7 @@ export default function SocialAssetGenerator() {
   const isForum = selectedCohort.id === 'forum';
 
   const isCloudNoImage = isCloud && (normalizedHeadline.includes('(No image)') || normalizedHeadline.includes('(No Logo)'));
+  const isCenteredLayout = isCloudNoImage && selectedFormat !== '16:9';
   const headlineLen = currentHeadline.length;
 
   const baseSizeRem = selectedFormat === '16:9' ? 2.25 : 3.0;
@@ -112,6 +113,11 @@ export default function SocialAssetGenerator() {
   }
 
   const headlineClass = `text-[calc(var(--base-size)*${headlineScale})]`;
+
+  // Missing variables safely restored
+  const mainHeadlineRem = baseSizeRem * headlineScale;
+  const buildHeadlineRem = mainHeadlineRem * 1.15;
+  const fasterHeadlineRem = buildHeadlineRem * 1.7;
 
   const isConnectingExperts = isForum && normalizedHeadline.includes('Connecting with experts');
   const isConnectingExperts9to16 = isConnectingExperts && selectedFormat === '9:16';
@@ -163,54 +169,73 @@ export default function SocialAssetGenerator() {
   if (selectedFormat === '16:9' && uploadType !== 'photo') uploadPanelAspectClass = 'aspect-video';
 
   let uploadPanelPlacementClass = '';
-  if (isForum16to9) {
-    uploadPanelPlacementClass = 'bottom-3 right-3 sm:bottom-4 sm:right-4 h-[75%] w-auto max-w-none';
-  } else if (selectedFormat === '16:9') {
-    uploadPanelPlacementClass = 'bottom-3 right-3 sm:bottom-4 sm:right-4 w-44 sm:w-56 md:w-68';
-  } else if (selectedFormat === '9:16') {
-    uploadPanelPlacementClass = 'bottom-16 right-3 sm:bottom-20 sm:right-4 md:bottom-24 md:right-5 w-40 sm:w-48 md:w-56';
+  if (isForum16to9) uploadPanelPlacementClass = 'bottom-3 right-3 sm:bottom-4 sm:right-4 h-[75%] w-auto max-w-none';
+  else if (selectedFormat === '16:9') uploadPanelPlacementClass = 'bottom-3 right-3 sm:bottom-4 sm:right-4 w-44 sm:w-56 md:w-68';
+  else if (selectedFormat === '9:16') uploadPanelPlacementClass = 'bottom-16 right-3 sm:bottom-20 sm:right-4 md:bottom-24 md:right-5 w-40 sm:w-48 md:w-56';
+  else uploadPanelPlacementClass = 'bottom-2 right-2 sm:bottom-3 sm:right-3 w-32 sm:w-36 md:w-44';
+
+  let ctaPlacementClass = '';
+  if (isCenteredLayout) {
+    ctaPlacementClass = 'absolute z-10 w-auto inline-flex items-center pointer-events-none transition-all duration-300 ease-in-out left-1/2 -translate-x-1/2 ';
+    if (selectedFormat === '9:16') ctaPlacementClass += 'bottom-16 sm:bottom-20 md:bottom-24 scale-90';
+    else ctaPlacementClass += 'bottom-7 sm:bottom-8 md:bottom-10 scale-100';
+  } else if (isCloudNoImage && selectedFormat === '16:9') {
+    ctaPlacementClass = 'absolute z-10 w-auto inline-flex items-center pointer-events-none transition-all duration-300 ease-in-out right-10 sm:right-12 md:right-14 bottom-8 sm:bottom-10 scale-[0.80] origin-bottom-right';
   } else {
-    uploadPanelPlacementClass = 'bottom-2 right-2 sm:bottom-3 sm:right-3 w-32 sm:w-36 md:w-44';
+    ctaPlacementClass = 'absolute z-10 w-auto inline-flex items-center pointer-events-none transition-all duration-300 ease-in-out left-7 sm:left-9 md:left-10 ';
+    if (selectedFormat === '16:9') ctaPlacementClass += 'bottom-3.5 sm:bottom-4 md:bottom-5 scale-[0.70] origin-bottom-left';
+    else if (selectedFormat === '9:16') ctaPlacementClass += 'bottom-16 sm:bottom-20 md:bottom-24 scale-[0.70] origin-bottom-left';
+    else ctaPlacementClass += 'bottom-7 sm:bottom-8 md:bottom-9 scale-100 origin-bottom-left';
   }
 
-  // STANDARD CTA PILL & COPY CLASSES (Used when not Cloud No Image)
-  let ctaPlacementClass = 'absolute z-10 w-auto inline-flex items-center pointer-events-none transition-all duration-300 ease-in-out left-7 sm:left-9 md:left-10 ';
-  if (selectedFormat === '16:9') ctaPlacementClass += 'bottom-3.5 sm:bottom-4 md:bottom-5 scale-[0.70] origin-bottom-left';
-  else if (selectedFormat === '9:16') ctaPlacementClass += 'bottom-16 sm:bottom-20 md:bottom-24 scale-[0.70] origin-bottom-left';
-  else ctaPlacementClass += 'bottom-7 sm:bottom-8 md:bottom-9 scale-100 origin-bottom-left';
+  let copyPlacementClass = 'absolute z-10 pointer-events-none transition-all duration-300 ease-in-out text-left ';
+  if (isCloudNoImage) {
+    copyPlacementClass += 'left-8 sm:left-10 md:left-12 ';
+    if (selectedFormat === '16:9') copyPlacementClass += 'top-[34%] max-w-[85%]';
+    else if (selectedFormat === '9:16') copyPlacementClass += 'top-[38%] right-8 sm:right-10 md:right-12';
+    else copyPlacementClass += 'top-[36%] right-8 sm:right-10 md:right-12';
+  } else {
+    copyPlacementClass += 'left-7 sm:left-9 md:left-10 ';
+    if (selectedFormat === '16:9') copyPlacementClass += 'top-[28%] sm:top-[30%] max-w-[62%] sm:max-w-[65%]';
+    else if (selectedFormat === '9:16') copyPlacementClass += 'top-[22%] sm:top-[24%] max-w-[86%] sm:max-w-[88%]';
+    else copyPlacementClass += 'top-[33%] sm:top-[35%] max-w-[86%] sm:max-w-[88%]';
+  }
 
-  let copyPlacementClass = 'absolute z-10 pointer-events-none transition-all duration-300 ease-in-out text-left left-7 sm:left-9 md:left-10 ';
-  if (selectedFormat === '16:9') copyPlacementClass += 'top-[28%] sm:top-[30%] max-w-[62%] sm:max-w-[65%]';
-  else if (selectedFormat === '9:16') copyPlacementClass += 'top-[22%] sm:top-[24%] max-w-[86%] sm:max-w-[88%]';
-  else copyPlacementClass += 'top-[33%] sm:top-[35%] max-w-[86%] sm:max-w-[88%]';
+  let logoLockupPlacementClass = 'absolute z-10 flex flex-col pointer-events-none transition-all duration-300 ease-in-out items-start text-left ';
+  if (isCloudNoImage) {
+    logoLockupPlacementClass += 'left-8 sm:left-10 md:left-12 ';
+  } else {
+    logoLockupPlacementClass += 'left-7 sm:left-9 md:left-10 ';
+  }
 
-  let logoLockupPlacementClass = 'absolute z-10 flex flex-col pointer-events-none transition-all duration-300 ease-in-out items-start text-left left-7 sm:left-9 md:left-10 ';
-  if (selectedFormat === '16:9') logoLockupPlacementClass += (isForum ? 'top-9 sm:top-11 ' : 'top-8 sm:top-10 ');
-  else if (selectedFormat === '9:16') logoLockupPlacementClass += 'top-12 sm:top-14 ';
-  else logoLockupPlacementClass += 'top-10 sm:top-12 ';
+  if (selectedFormat === '16:9') {
+    logoLockupPlacementClass += (isForum ? 'top-9 sm:top-11 ' : 'top-8 sm:top-10 ');
+  } else if (selectedFormat === '9:16') {
+    logoLockupPlacementClass += 'top-12 sm:top-14 ';
+  } else {
+    logoLockupPlacementClass += 'top-10 sm:top-12 ';
+  }
 
-  if (isForum && selectedFormat === '9:16') logoLockupPlacementClass += '-translate-y-3 sm:-translate-y-4 ';
-  if (shouldReduceLogoLockup) logoLockupPlacementClass += ' scale-[0.85] origin-top-left';
-  else logoLockupPlacementClass += ' scale-100 origin-top-left';
+  if (isForum && selectedFormat === '9:16') {
+    logoLockupPlacementClass += '-translate-y-3 sm:-translate-y-4 ';
+  }
+  
+  if (shouldReduceLogoLockup) {
+      logoLockupPlacementClass += ' scale-[0.85] origin-top-left';
+  } else {
+      logoLockupPlacementClass += ' scale-100 origin-top-left';
+  }
 
   const currentAssetSrc = selectedCohort.assets[assetType as keyof typeof selectedCohort.assets];
 
-  // Perfectly pin background to protect streaks
   let mediaStyle: React.CSSProperties = { width: '100%', height: '100%', objectFit: 'cover' };
   if (selectedCohort.id === 'forum') {
      mediaStyle.transform = 'translate(25%, -25%) scale(2.2)';
   } else if (selectedCohort.id === 'accelerator') {
      mediaStyle.transform = 'translate(25%, 25%) scale(1.5)';
   } else if (selectedCohort.id === 'cloud') {
-     if (selectedFormat === '16:9') {
-         mediaStyle.transform = 'scaleX(-1) scale(1.15)'; // Flip video horizontally to anchor streaks on the right
-         mediaStyle.transformOrigin = 'center center';
-         mediaStyle.objectPosition = 'center center';
-     } else {
-         mediaStyle.transform = 'scale(1.2)';
-         mediaStyle.transformOrigin = 'left center'; // Safely pin to left edge to keep streaks visible
-         mediaStyle.objectPosition = 'left center';
-     }
+     mediaStyle.objectPosition = 'right center';
+     mediaStyle.transform = 'scale(1.2)';
   }
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -318,12 +343,12 @@ export default function SocialAssetGenerator() {
         } else if (selectedCohort.id === 'cloud') {
           if (selectedFormat === '16:9') {
               ctx.translate(exportWidth/2, exportHeight/2);
-              ctx.scale(-1.15, 1.15); // Flip background on Canvas
+              ctx.scale(-1.15, 1.15); 
               ctx.drawImage(media, -dw/2, -dh/2, dw, dh);
           } else {
               ctx.translate(0, exportHeight/2);
               ctx.scale(1.2, 1.2);
-              ctx.drawImage(media, 0, -dh/2, dw, dh); // Pin Left on Canvas
+              ctx.drawImage(media, 0, -dh/2, dw, dh); 
           }
         } else {
           const cx = (exportWidth - dw) / 2;
@@ -373,11 +398,9 @@ export default function SocialAssetGenerator() {
         ctx.fillRect(0, 0, exportWidth, exportHeight);
 
         const lockupScale = (isForum && selectedFormat === '16:9') ? 0.825 : (isForum && selectedFormat === '9:16') ? 0.94 : shouldReduceLogoLockup ? 0.85 : 1.0;
-        const logoH = Math.round(46 * lockupScale);
+        const logoH = Math.round(36 * lockupScale);
         
-        // BASE X MARGIN: Responsive to exact canvas dimensions
         const baseX = selectedFormat === '16:9' ? exportWidth * 0.0625 : exportWidth * 0.074;
-        
         const logoY = (isForum && selectedFormat === '16:9') ? 74 : (isForum && selectedFormat === '9:16') ? 48 : (isCloudNoImage && selectedFormat === '9:16') ? 110 : 80;
         
         if (logoImg) {
@@ -388,7 +411,6 @@ export default function SocialAssetGenerator() {
           drawFallbackLogo(ctx, baseX, logoY, lockupScale);
         }
 
-        // STRICT 2x G SPACING
         const programGap = (isForum && selectedFormat === '16:9') ? 26 : isForum ? 30 : Math.round(logoH * 2);
         const programY = logoY + logoH + programGap;
         
@@ -417,11 +439,9 @@ export default function SocialAssetGenerator() {
           const buildSize = exportWidth * (selectedFormat === '16:9' ? 0.0625 : 0.12);
           const fasterSize = exportWidth * (selectedFormat === '16:9' ? 0.135 : 0.30);
           
-          // Left-aligned edge-to-edge calculation
           ctx.font = `500 ${buildSize}px "Google Sans Flex", sans-serif`;
           ctx.fillText("We're building", baseX, mainCopyY);
 
-          // Perfectly indent 'faster' to match exact layout offsets
           const fasterOffsetX = baseX + exportWidth * (
              selectedFormat === '16:9' ? 0.15 : 
              selectedFormat === '1:1' ? 0.12 : 
@@ -530,7 +550,7 @@ export default function SocialAssetGenerator() {
         ctx.save();
         ctx.beginPath();
         ctx.roundRect(ctaX, ctaY, pillW, pillH, pillH / 2);
-        ctx.fillStyle = 'rgba(18, 19, 23, 0.6)'; // Dark glassy fill
+        ctx.fillStyle = 'rgba(18, 19, 23, 0.6)';
         ctx.fill();
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
         ctx.lineWidth = 1.5;
@@ -675,8 +695,6 @@ export default function SocialAssetGenerator() {
 
               {isCloudNoImage ? (
                 <div className="absolute inset-0 z-10 pointer-events-none" style={{ padding: selectedFormat === '16:9' ? '6.25cqi' : '7.4cqi' }}>
-                  
-                  {/* Left-Aligned Cloud Logo Lockup with 2x G Spacing */}
                   <div style={{ position: 'absolute', top: selectedFormat === '16:9' ? '7cqi' : '7.4cqi', left: selectedFormat === '16:9' ? '6.25cqi' : '7.4cqi' }}>
                     <img 
                       src="/assets/gfs-logo-white.png" 
@@ -703,7 +721,6 @@ export default function SocialAssetGenerator() {
                     </div>
                   </div>
 
-                  {/* HTML Inline Left-Aligned & Offset Math Matching Canvas exactly */}
                   <div style={{ position: 'absolute', top: selectedFormat === '16:9' ? '44cqi' : '38cqi', left: selectedFormat === '16:9' ? '6.25cqi' : '7.4cqi', textAlign: 'left' }}>
                     <div style={{ fontSize: selectedFormat === '16:9' ? '6.25cqi' : '12cqi', lineHeight: 1.05, color: 'white', fontWeight: 500 }}>
                       We're building
@@ -719,7 +736,6 @@ export default function SocialAssetGenerator() {
                       faster
                     </div>
                   </div>
-
                 </div>
               ) : (
                 <>
