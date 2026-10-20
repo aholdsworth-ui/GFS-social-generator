@@ -91,20 +91,23 @@ export default function SocialAssetGenerator() {
   const isCloud = selectedCohort.id === 'cloud';
   const isAccelerator = selectedCohort.id === 'accelerator';
   const isForum = selectedCohort.id === 'forum';
+  
+  const isCloudNoLogo = isCloud && normalizedHeadline.includes("We're building faster (No image)");
+  const isCenteredLayout = isCloudNoLogo && selectedFormat !== '16:9';
   const headlineLen = currentHeadline.length;
 
   if (selectedFormat === '16:9') {
     if (isForum) {
       headlineScale = normalizedHeadline.includes('Connecting with experts') ? 1.08 : 1.2;
     } else if (isCloud) {
-      headlineScale = 1.44;
+      headlineScale = isCloudNoLogo ? 1.8 : 1.44;
     } else if (isAccelerator) {
       headlineScale = headlineLen <= 13 ? 1.575 : 0.96;
     }
   } else if (selectedFormat === '9:16') {
     if (isForum) {
       headlineScale = 0.9;
-    } else if (isCloud && normalizedHeadline.includes('Building faster')) {
+    } else if (isCloud && normalizedHeadline.toLowerCase().includes('building faster')) {
       headlineScale = 0.84;
     } else if (isCloud) {
       headlineScale = 1.2;
@@ -113,7 +116,7 @@ export default function SocialAssetGenerator() {
     }
   } else if (selectedFormat === '1:1') {
     if (isCloud) {
-      headlineScale = 1.2;
+      headlineScale = isCloudNoLogo ? 1.0 : 1.2;
     } else if (isAccelerator) {
       headlineScale = headlineLen <= 13 ? 1.0 : 0.704;
     } else {
@@ -121,7 +124,7 @@ export default function SocialAssetGenerator() {
     }
   } else {
     if (isCloud) {
-      headlineScale = 1.2;
+      headlineScale = isCloudNoLogo ? 1.1 : 1.2;
     } else if (isAccelerator) {
       headlineScale = headlineLen <= 13 ? 1.0 : 0.8;
     } else {
@@ -131,7 +134,6 @@ export default function SocialAssetGenerator() {
 
   const headlineClass = `text-[calc(var(--base-size)*${headlineScale})]`;
 
-  // Safely restore explicit variable definitions for margin routing
   const isConnectingExperts = isForum && normalizedHeadline.includes('Connecting with experts');
   const isConnectingExperts9to16 = isConnectingExperts && selectedFormat === '9:16';
   const isConnectingExperts16to9 = isConnectingExperts && selectedFormat === '16:9';
@@ -150,6 +152,8 @@ export default function SocialAssetGenerator() {
     headlineToRender = "We're off to\nMountain View!";
   } else if (isSpanishSpeakingLatinAmerica) {
     headlineToRender = 'Spanish-speaking\nLatin America';
+  } else if (isCloudNoLogo) {
+    headlineToRender = "We're building\nfaster";
   }
 
   const isForum9to16 = selectedFormat === '9:16' && isForum;
@@ -217,7 +221,7 @@ export default function SocialAssetGenerator() {
 
   const ctaPlacementClass = [
     'absolute z-10 w-auto inline-flex items-center pointer-events-none transition-all duration-300 ease-in-out',
-    'left-7 sm:left-9 md:left-10',
+    isCenteredLayout ? 'left-1/2 -translate-x-1/2' : isCloudNoLogo && selectedFormat === '16:9' ? 'right-12 sm:right-16 md:right-20' : 'left-7 sm:left-9 md:left-10',
     selectedFormat === '16:9'
       ? 'bottom-3.5 sm:bottom-4 md:bottom-5 scale-[0.70] origin-bottom-left'
       : selectedFormat === '9:16'
@@ -226,18 +230,18 @@ export default function SocialAssetGenerator() {
   ].filter(Boolean).join(' ');
 
   const copyPlacementClass = [
-    'absolute z-10 pointer-events-none transition-all duration-300 ease-in-out text-left',
-    'left-7 sm:left-9 md:left-10',
+    'absolute z-10 pointer-events-none transition-all duration-300 ease-in-out',
+    isCenteredLayout ? 'left-1/2 -translate-x-1/2 text-center w-full px-8' : 'left-7 sm:left-9 md:left-10 text-left',
     selectedFormat === '16:9'
       ? 'top-[28%] sm:top-[30%] max-w-[62%] sm:max-w-[65%]'
       : selectedFormat === '9:16'
-      ? 'top-[22%] sm:top-[24%] max-w-[86%] sm:max-w-[88%]'
-      : 'top-[33%] sm:top-[35%] max-w-[86%] sm:max-w-[88%]',
+      ? 'top-[22%] sm:top-[24%] max-w-[90%] sm:max-w-[92%]'
+      : 'top-[33%] sm:top-[35%] max-w-[90%] sm:max-w-[92%]',
   ].filter(Boolean).join(' ');
 
   const logoLockupPlacementClass = [
-    'absolute z-10 flex flex-col items-start pointer-events-none transition-all duration-300 ease-in-out',
-    'left-7 sm:left-9 md:left-10',
+    'absolute z-10 flex flex-col pointer-events-none transition-all duration-300 ease-in-out',
+    isCenteredLayout ? 'left-1/2 -translate-x-1/2 items-center text-center' : 'left-7 sm:left-9 md:left-10 items-start text-left',
     selectedFormat === '16:9'
       ? (isForum ? 'top-9 sm:top-11' : 'top-5 sm:top-6')
       : selectedFormat === '9:16'
@@ -249,8 +253,9 @@ export default function SocialAssetGenerator() {
 
   const currentAssetSrc = selectedCohort.assets[assetType as keyof typeof selectedCohort.assets];
 
-  // Specific dynamic crop alignment matching 75% X / 25% Y focal coordinate
   const forumTransform = selectedCohort.id === 'forum' ? 'translate(25%, -25%) scale(2.2)' : 'none';
+  const cloudTransform = selectedCohort.id === 'cloud' ? 'translate(-12%, 0) scale(1.25)' : 'none';
+  const activeTransform = selectedCohort.id === 'forum' ? forumTransform : selectedCohort.id === 'cloud' ? cloudTransform : 'none';
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -289,7 +294,7 @@ export default function SocialAssetGenerator() {
   const handleExportImage = async () => {
     if (!liveCanvasRef.current) return;
     setIsExportingImage(true);
-    setExportNotice('Rendering high-resolution 4:5 image...');
+    setExportNotice(`Rendering high-resolution ${selectedFormat} image...`);
     try {
       const dataUrl = await toPng(liveCanvasRef.current, {
         cacheBust: true,
@@ -354,7 +359,7 @@ export default function SocialAssetGenerator() {
         console.warn('Could not load logo PNG for video recorder');
       }
 
-      if (uploadedImage) {
+      if (uploadedImage && !isCloudNoLogo) {
         try {
           userImg = await loadImg(uploadedImage);
         } catch (e) {
@@ -414,9 +419,9 @@ export default function SocialAssetGenerator() {
             ctx.scale(2.2, 2.2);
             ctx.drawImage(liveVideo, -liveVideo.videoWidth / 2, -liveVideo.videoHeight / 2);
           } else if (selectedCohort.id === 'cloud') {
-            ctx.translate(exportWidth, exportHeight * 0.5);
+            ctx.translate(-exportWidth * 0.12, 0);
             ctx.scale(1.25, 1.25);
-            ctx.drawImage(liveVideo, -liveVideo.videoWidth, -liveVideo.videoHeight * 0.5);
+            ctx.drawImage(liveVideo, 0, 0, liveVideo.videoWidth, liveVideo.videoHeight);
           } else {
             ctx.translate(exportWidth, exportHeight);
             ctx.scale(1.5, 1.5);
@@ -444,8 +449,9 @@ export default function SocialAssetGenerator() {
             }
             ctx.drawImage(bgImg, -drawW / 2, -drawH / 2, drawW, drawH);
           } else if (selectedCohort.id === 'cloud') {
+            ctx.translate(-exportWidth * 0.12, 0);
             ctx.scale(1.25, 1.25);
-            ctx.drawImage(bgImg, -exportWidth * 0.25, -exportHeight * 0.12, exportWidth, exportHeight);
+            ctx.drawImage(bgImg, 0, 0, exportWidth, exportHeight);
           } else {
             ctx.scale(1.5, 1.5);
             ctx.drawImage(bgImg, -exportWidth * 0.5, -exportHeight * 0.5, exportWidth, exportHeight);
@@ -462,25 +468,28 @@ export default function SocialAssetGenerator() {
         ctx.fillStyle = vignette;
         ctx.fillRect(0, 0, exportWidth, exportHeight);
 
-        const logoX = 80;
-        const logoY = (isForum && selectedFormat === '16:9') ? 74 : (isForum && selectedFormat === '9:16') ? 48 : 80;
-        
         const lockupScale = (isForum && selectedFormat === '16:9') ? 0.825 : (isForum && selectedFormat === '9:16') ? 0.94 : shouldReduceLogoLockup ? 0.8 : 1.0;
         const logoH = Math.round(46 * lockupScale);
+        
+        let logoX = 80;
+        const logoY = (isForum && selectedFormat === '16:9') ? 74 : (isForum && selectedFormat === '9:16') ? 48 : 80;
+        
+        const actualLogoX = isCenteredLayout ? (exportWidth / 2) : logoX;
         
         if (logoImg) {
           const logoAspect = logoImg.width / logoImg.height;
           const logoW = logoH * logoAspect;
-          ctx.drawImage(logoImg, logoX, logoY, logoW, logoH);
+          ctx.drawImage(logoImg, isCenteredLayout ? actualLogoX - (logoW/2) : actualLogoX, logoY, logoW, logoH);
         } else {
-          drawFallbackLogo(ctx, logoX, logoY, lockupScale);
+          drawFallbackLogo(ctx, isCenteredLayout ? actualLogoX - (Math.round(85 * lockupScale)/2) : actualLogoX, logoY, lockupScale);
         }
 
         const programGap = (isForum && selectedFormat === '16:9') ? 26 : isForum ? 30 : Math.round(56 * lockupScale);
         const programY = logoY + logoH + programGap;
         ctx.fillStyle = '#FFFFFF';
         ctx.font = `500 ${Math.round(56 * lockupScale)}px "Google Sans Flex", sans-serif`;
-        ctx.fillText(selectedCohort.name, logoX, programY);
+        ctx.textAlign = isCenteredLayout ? 'center' : 'left';
+        ctx.fillText(selectedCohort.name, actualLogoX, programY);
 
         const baseCanvasHeadlineSize = selectedFormat === '16:9' ? 64 : 88;
         const canvasHeadlineSize = Math.round(baseCanvasHeadlineSize * headlineScale);
@@ -509,6 +518,8 @@ export default function SocialAssetGenerator() {
             ? 0.60
             : selectedFormat === '16:9'
             ? 0.62
+            : isCenteredLayout
+            ? 0.90
             : 0.82
         );
         const rawLines = headlineToRender.split('\n');
@@ -522,14 +533,14 @@ export default function SocialAssetGenerator() {
             const testLine = line + words[n] + ' ';
             const metrics = ctx.measureText(testLine);
             if (metrics.width > maxWidth && n > 0) {
-              ctx.fillText(line, logoX, currentY);
+              ctx.fillText(line, actualLogoX, currentY);
               line = words[n] + ' ';
               currentY += lineWrapStep;
             } else {
               line = testLine;
             }
           }
-          ctx.fillText(line, logoX, currentY);
+          ctx.fillText(line, actualLogoX, currentY);
           currentY += lineWrapStep;
         }
 
@@ -543,10 +554,10 @@ export default function SocialAssetGenerator() {
             : 40;
           ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
           ctx.font = `500 ${supportingFontSize}px "Google Sans Flex", sans-serif`;
-          ctx.fillText(currentSupportingText, logoX, currentY - Math.round(lineWrapStep * 0.3) + 12);
+          ctx.fillText(currentSupportingText, actualLogoX, currentY - Math.round(lineWrapStep * 0.3) + 12);
         }
 
-        if (userImg) {
+        if (userImg && !isCloudNoLogo) {
           let userW = 351;
           let userH = 439;
           let userX = exportWidth - userW - 28;
@@ -648,10 +659,17 @@ export default function SocialAssetGenerator() {
         const ctaScale = (selectedFormat === '16:9' || selectedFormat === '9:16') ? 0.7 : 1.0;
         const pillW = Math.round(240 * ctaScale);
         const pillH = Math.round(56 * ctaScale);
-        const ctaX = 80;
-        const ctaY = selectedFormat === '9:16'
+        
+        let ctaX = 80;
+        let ctaY = selectedFormat === '9:16'
           ? exportHeight - 220
           : exportHeight - Math.round(120 * ctaScale);
+
+        if (isCenteredLayout) {
+          ctaX = (exportWidth / 2) - (pillW / 2);
+        } else if (isCloudNoLogo && selectedFormat === '16:9') {
+          ctaX = exportWidth - pillW - 120;
+        }
 
         ctx.save();
         ctx.beginPath();
@@ -784,7 +802,7 @@ export default function SocialAssetGenerator() {
                         width: '100%', 
                         height: '100%', 
                         objectFit: 'cover',
-                        ...(selectedCohort.id === 'forum' ? { transform: forumTransform } : {})
+                        transform: activeTransform
                       }}
                       className={`w-full h-full ${selectedCohort.cropRule} ${videoLoadError ? 'hidden' : 'block'}`}
                     />
@@ -805,7 +823,7 @@ export default function SocialAssetGenerator() {
                       width: '100%', 
                       height: '100%', 
                       objectFit: 'cover',
-                      ...(selectedCohort.id === 'forum' ? { transform: forumTransform } : {})
+                      transform: activeTransform
                     }}
                     className={`w-full h-full ${selectedCohort.cropRule}`}
                   />
@@ -830,7 +848,7 @@ export default function SocialAssetGenerator() {
                     }
                   }}
                 />
-                <p className={`${(isForum && selectedFormat === '16:9') ? 'mt-3 sm:mt-[14px] text-[20px] sm:text-[22px] md:text-[26px]' : (isForum && selectedFormat === '9:16') ? 'mt-3.5 sm:mt-4 text-xl sm:text-2xl md:text-[28px]' : isForum ? 'mt-4 sm:mt-5 text-xl sm:text-2xl md:text-[28px]' : 'mt-8 text-xl sm:text-2xl md:text-[28px]'} text-white font-medium tracking-tight leading-tight text-left transition-all duration-300`}>
+                <p className={`${(isForum && selectedFormat === '16:9') ? 'mt-3 sm:mt-[14px] text-[20px] sm:text-[22px] md:text-[26px]' : (isForum && selectedFormat === '9:16') ? 'mt-3.5 sm:mt-4 text-xl sm:text-2xl md:text-[28px]' : isForum ? 'mt-4 sm:mt-5 text-xl sm:text-2xl md:text-[28px]' : 'mt-8 text-xl sm:text-2xl md:text-[28px]'} text-white font-medium tracking-tight leading-tight ${isCenteredLayout ? 'text-center' : 'text-left'} transition-all duration-300`}>
                   {selectedCohort.name}
                 </p>
 
@@ -841,7 +859,7 @@ export default function SocialAssetGenerator() {
                         ? 'mt-4 sm:mt-5 md:mt-6 max-w-[55%] sm:max-w-[58%] md:max-w-[60%]'
                         : (isForum && selectedFormat === '16:9')
                         ? 'mt-10 sm:mt-12 md:mt-14 max-w-[55%] sm:max-w-[58%] md:max-w-[60%]'
-                        : isConnectingExperts // Unified correctly for 4:5, 1:1, 9:16
+                        : isConnectingExperts
                         ? 'mt-14 sm:mt-16 md:mt-[4.5rem] max-w-[90%] sm:max-w-[92%] mb-4'
                         : 'mt-16 sm:mt-20 md:mt-24 max-w-[85%] sm:max-w-[88%] mb-6'
                     } pointer-events-none transition-all duration-300 ease-in-out text-left`}
@@ -873,21 +891,21 @@ export default function SocialAssetGenerator() {
                       '--base-size': `${baseSizeRem}rem`,
                       fontSize: `calc(var(--base-size) * ${headlineScale})`,
                     } as React.CSSProperties}
-                    className={`text-white font-medium ${headlineClass} leading-[1.04] tracking-tight drop-shadow-sm transition-all duration-300 text-left`}
+                    className={`text-white font-medium ${headlineClass} leading-[1.04] tracking-tight drop-shadow-sm transition-all duration-300 ${isCenteredLayout ? 'text-center' : 'text-left'}`}
                   >
                     {headlineToRender.split('\n').map((line, i) => (
                         <span key={i} className="block whitespace-nowrap">{line}</span>
                     ))}
                   </h2>
-                  {currentSupportingText && (
-                    <p className={`mt-2.5 sm:mt-3 text-white/90 font-medium ${supportingTextSizeClass} leading-snug tracking-normal drop-shadow-sm transition-all duration-300 text-left`}>
+                  {currentSupportingText && !isCloudNoLogo && (
+                    <p className={`mt-2.5 sm:mt-3 text-white/90 font-medium ${supportingTextSizeClass} leading-snug tracking-normal drop-shadow-sm transition-all duration-300 ${isCenteredLayout ? 'text-center' : 'text-left'}`}>
                       {currentSupportingText}
                     </p>
                   )}
                 </div>
               )}
 
-              {uploadedImage && (
+              {uploadedImage && !isCloudNoLogo && (
                 <div
                   className={`absolute z-10 ${uploadPanelPlacementClass} ${uploadPanelAspectClass} ${uploadScaleClass} rounded-2xl shadow-2xl shadow-black/40 overflow-hidden flex items-center justify-center transition-all duration-300 ease-in-out ${
                     uploadType === 'photo'
@@ -1196,136 +1214,46 @@ export default function SocialAssetGenerator() {
               )}
             </div>
 
-            <div className="space-y-3">
-              <div className="flex items-center justify-between gap-2">
-                <label className="text-xs font-medium text-white/80 uppercase tracking-wider flex items-center gap-1.5">
-                  <Upload className="w-3.5 h-3.5 text-blue-400" />
-                  <span>Upload Asset</span>
-                </label>
+            {!isCloudNoLogo && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <label className="text-xs font-medium text-white/80 uppercase tracking-wider flex items-center gap-1.5">
+                    <Upload className="w-3.5 h-3.5 text-blue-400" />
+                    <span>Upload Asset</span>
+                  </label>
 
-                <div className="inline-flex items-center bg-[#181b22] border border-white/15 p-0.5 rounded-lg">
-                  <button
-                    type="button"
-                    onClick={() => setUploadType('photo')}
-                    className={`px-3 py-1 text-xs rounded-md font-medium transition-all ${
-                      uploadType === 'photo'
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : 'text-white/60 hover:text-white'
-                    }`}
-                  >
-                    Photo
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setUploadType('logo')}
-                    className={`px-3 py-1 text-xs rounded-md font-medium transition-all ${
-                      uploadType === 'logo'
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : 'text-white/60 hover:text-white'
-                    }`}
-                  >
-                    Logo
-                  </button>
-                </div>
-              </div>
-
-              {!uploadedImage ? (
-                <div className="space-y-2">
-                  <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className="border-2 border-dashed border-white/20 hover:border-blue-500/60 rounded-xl p-5 text-center cursor-pointer transition-colors bg-[#181b22]/50 hover:bg-blue-500/5 group"
-                  >
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                    />
-                    <Upload className="w-6 h-6 mx-auto text-white/40 group-hover:text-blue-400 mb-2 transition-colors" />
-                    <p className="text-xs text-white/80 font-medium">
-                      {uploadType === 'photo'
-                        ? 'Click to upload headshot or photo'
-                        : 'Click to upload brand or startup logo'}
-                    </p>
-                    <p className="text-[10px] text-white/40 mt-1">
-                      {uploadType === 'photo'
-                        ? 'PNG, JPG, WebP (Renders 4:5 portrait, full bleed with object-cover, p-0)'
-                        : 'PNG, SVG, JPG (Renders 1:1 square, centered on white with object-contain, p-6)'}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2 pt-1">
-                    <span className="text-[10px] text-white/40">Quick test:</span>
+                  <div className="inline-flex items-center bg-[#181b22] border border-white/15 p-0.5 rounded-lg">
                     <button
                       type="button"
-                      onClick={() => setSampleLogo('founder')}
-                      className={`text-[10px] px-2.5 py-1 rounded-md transition-colors border ${
+                      onClick={() => setUploadType('photo')}
+                      className={`px-3 py-1 text-xs rounded-md font-medium transition-all ${
                         uploadType === 'photo'
-                          ? 'bg-blue-500/15 border-blue-500/30 text-blue-200'
-                          : 'bg-white/5 hover:bg-white/10 text-white/70 border-white/10'
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'text-white/60 hover:text-white'
                       }`}
                     >
-                      Sample Founder Photo
+                      Photo
                     </button>
                     <button
                       type="button"
-                      onClick={() => setSampleLogo('logo')}
-                      className={`text-[10px] px-2.5 py-1 rounded-md transition-colors border ${
+                      onClick={() => setUploadType('logo')}
+                      className={`px-3 py-1 text-xs rounded-md font-medium transition-all ${
                         uploadType === 'logo'
-                          ? 'bg-blue-500/15 border-blue-500/30 text-blue-200'
-                          : 'bg-white/5 hover:bg-white/10 text-white/70 border-white/10'
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'text-white/60 hover:text-white'
                       }`}
                     >
-                      Sample Startup Logo
+                      Logo
                     </button>
                   </div>
                 </div>
-              ) : (
-                <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`w-12 h-12 rounded-lg overflow-hidden border border-white/20 shrink-0 ${
-                        uploadType === 'photo' ? 'bg-black/40' : 'bg-white p-1.5'
-                      }`}
-                    >
-                      <img
-                        src={uploadedImage}
-                        alt="Thumbnail"
-                        className={`w-full h-full ${
-                          uploadType === 'photo'
-                            ? 'object-cover'
-                            : 'object-contain'
-                        }`}
-                      />
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-white truncate max-w-[170px]">
-                        {uploadedFileName || 'Uploaded Image'}
-                      </p>
-                      <p className="text-[10px] text-white/60 flex items-center gap-1.5 mt-0.5">
-                        <span
-                          className={`inline-block w-2 h-2 rounded-full ${
-                            uploadType === 'photo' ? 'bg-blue-400' : 'bg-emerald-400'
-                          }`}
-                        />
-                        <span>
-                          {uploadType === 'photo'
-                            ? 'Photo mode (4:5 edge-to-edge)'
-                            : 'Logo mode (1:1 square centered on white)'}
-                        </span>
-                      </p>
-                    </div>
-                  </div>
 
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
+                {!uploadedImage ? (
+                  <div className="space-y-2">
+                    <div
                       onClick={() => fileInputRef.current?.click()}
-                      className="p-2 rounded-lg hover:bg-white/10 text-white/50 hover:text-white transition-colors"
-                      title="Replace file"
+                      className="border-2 border-dashed border-white/20 hover:border-blue-500/60 rounded-xl p-5 text-center cursor-pointer transition-colors bg-[#181b22]/50 hover:bg-blue-500/5 group"
                     >
-                      <Upload className="w-4 h-4" />
                       <input
                         ref={fileInputRef}
                         type="file"
@@ -1333,19 +1261,111 @@ export default function SocialAssetGenerator() {
                         onChange={handleFileUpload}
                         className="hidden"
                       />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={removeUpload}
-                      className="p-2 rounded-lg hover:bg-red-500/20 text-white/50 hover:text-red-400 transition-colors"
-                      title="Remove upload"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                      <Upload className="w-6 h-6 mx-auto text-white/40 group-hover:text-blue-400 mb-2 transition-colors" />
+                      <p className="text-xs text-white/80 font-medium">
+                        {uploadType === 'photo'
+                          ? 'Click to upload headshot or photo'
+                          : 'Click to upload brand or startup logo'}
+                      </p>
+                      <p className="text-[10px] text-white/40 mt-1">
+                        {uploadType === 'photo'
+                          ? 'PNG, JPG, WebP (Renders 4:5 portrait, full bleed with object-cover, p-0)'
+                          : 'PNG, SVG, JPG (Renders 1:1 square, centered on white with object-contain, p-6)'}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-1">
+                      <span className="text-[10px] text-white/40">Quick test:</span>
+                      <button
+                        type="button"
+                        onClick={() => setSampleLogo('founder')}
+                        className={`text-[10px] px-2.5 py-1 rounded-md transition-colors border ${
+                          uploadType === 'photo'
+                            ? 'bg-blue-500/15 border-blue-500/30 text-blue-200'
+                            : 'bg-white/5 hover:bg-white/10 text-white/70 border-white/10'
+                        }`}
+                      >
+                        Sample Founder Photo
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSampleLogo('logo')}
+                        className={`text-[10px] px-2.5 py-1 rounded-md transition-colors border ${
+                          uploadType === 'logo'
+                            ? 'bg-blue-500/15 border-blue-500/30 text-blue-200'
+                            : 'bg-white/5 hover:bg-white/10 text-white/70 border-white/10'
+                        }`}
+                      >
+                        Sample Startup Logo
+                      </button>
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
+                ) : (
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-12 h-12 rounded-lg overflow-hidden border border-white/20 shrink-0 ${
+                          uploadType === 'photo' ? 'bg-black/40' : 'bg-white p-1.5'
+                        }`}
+                      >
+                        <img
+                          src={uploadedImage}
+                          alt="Thumbnail"
+                          className={`w-full h-full ${
+                            uploadType === 'photo'
+                              ? 'object-cover'
+                              : 'object-contain'
+                          }`}
+                        />
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-white truncate max-w-[170px]">
+                          {uploadedFileName || 'Uploaded Image'}
+                        </p>
+                        <p className="text-[10px] text-white/60 flex items-center gap-1.5 mt-0.5">
+                          <span
+                            className={`inline-block w-2 h-2 rounded-full ${
+                              uploadType === 'photo' ? 'bg-blue-400' : 'bg-emerald-400'
+                            }`}
+                          />
+                          <span>
+                            {uploadType === 'photo'
+                              ? 'Photo mode (4:5 edge-to-edge)'
+                              : 'Logo mode (1:1 square centered on white)'}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="p-2 rounded-lg hover:bg-white/10 text-white/50 hover:text-white transition-colors"
+                        title="Replace file"
+                      >
+                        <Upload className="w-4 h-4" />
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFileUpload}
+                          className="hidden"
+                        />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={removeUpload}
+                        className="p-2 rounded-lg hover:bg-red-500/20 text-white/50 hover:text-red-400 transition-colors"
+                        title="Remove upload"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="pt-3 border-t border-white/10 space-y-3">
               <label className="text-xs font-medium text-white/80 uppercase tracking-wider block">

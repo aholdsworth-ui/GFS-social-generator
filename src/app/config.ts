@@ -55,6 +55,7 @@ cropRule: "object-cover scale-[2.2] translate-x-[50%] -translate-y-[50%]",
     },
     headlines: [
       "We're building faster",
+      "We're building faster (No image)",
       "I'm building faster",
       "Building faster, scaling earlier"
     ],
