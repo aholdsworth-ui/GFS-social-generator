@@ -90,6 +90,7 @@ export default function SocialAssetGenerator() {
   const isForum = selectedCohort.id === 'forum';
 
   const isCloudNoImage = isCloud && (normalizedHeadline.includes('(No image)') || normalizedHeadline.includes('(No Logo)'));
+  const isCenteredLayout = isCloudNoImage && selectedFormat !== '16:9';
   const headlineLen = currentHeadline.length;
 
   const baseSizeRem = selectedFormat === '16:9' ? 2.25 : 3.0;
@@ -111,7 +112,6 @@ export default function SocialAssetGenerator() {
     else if (isAccelerator) headlineScale = headlineLen <= 13 ? 1.0 : 0.8;
   }
 
-  const headlineClass = `text-[calc(var(--base-size)*${headlineScale})]`;
   const mainHeadlineRem = baseSizeRem * headlineScale;
 
   const isConnectingExperts = isForum && normalizedHeadline.includes('Connecting with experts');
@@ -196,7 +196,11 @@ export default function SocialAssetGenerator() {
   } else if (selectedCohort.id === 'accelerator') {
      mediaStyle.transform = 'translate(25%, 25%) scale(1.5)';
   } else if (selectedCohort.id === 'cloud') {
-     if (selectedFormat === '16:9') {
+     if (selectedFormat === '9:16') {
+         // Pull background left so only ~1/3 of the rainbow is visible
+         mediaStyle.objectPosition = '25% center';
+         mediaStyle.transform = 'scale(1.0)';
+     } else if (selectedFormat === '16:9') {
          mediaStyle.transform = 'scaleX(-1) scale(1.15)';
          mediaStyle.transformOrigin = 'center center';
      } else {
@@ -309,14 +313,19 @@ export default function SocialAssetGenerator() {
           ctx.scale(1.5, 1.5);
           ctx.drawImage(media, -dw/2, -dh/2, dw, dh);
         } else if (selectedCohort.id === 'cloud') {
-          if (selectedFormat === '16:9') {
+          if (selectedFormat === '9:16') {
+              // Shift video left to hide exactly 2/3 of the rainbow
+              const tx = -exportWidth * 0.70;
+              const ty = (exportHeight - dh) / 2;
+              ctx.drawImage(media, tx, ty, dw, dh);
+          } else if (selectedFormat === '16:9') {
               ctx.translate(exportWidth/2, exportHeight/2);
               ctx.scale(-1.15, 1.15); 
               ctx.drawImage(media, -dw/2, -dh/2, dw, dh);
           } else {
               ctx.translate(exportWidth, exportHeight/2);
               ctx.scale(1.15, 1.15);
-              ctx.drawImage(media, -dw, -dh/2, dw, dh); // Anchored to the right side
+              ctx.drawImage(media, -dw, -dh/2, dw, dh); 
           }
         } else {
           const cx = (exportWidth - dw) / 2;
@@ -365,60 +374,154 @@ export default function SocialAssetGenerator() {
         ctx.fillStyle = vignette;
         ctx.fillRect(0, 0, exportWidth, exportHeight);
 
-        const lockupScale = (isForum && selectedFormat === '16:9') ? 0.825 : (isForum && selectedFormat === '9:16') ? 0.94 : shouldReduceLogoLockup ? 0.85 : 1.0;
-        const logoH = Math.round(36 * lockupScale);
-        
-        const baseX = selectedFormat === '16:9' ? exportWidth * 0.0625 : exportWidth * 0.074;
-        const logoY = (isForum && selectedFormat === '16:9') ? 74 : (isForum && selectedFormat === '9:16') ? 48 : (isCloudNoImage && selectedFormat === '9:16') ? 110 : 80;
-        
-        if (logoImg) {
-          const logoAspect = logoImg.width / logoImg.height;
-          const logoW = logoH * logoAspect;
-          ctx.drawImage(logoImg, baseX, logoY, logoW, logoH);
-        } else {
-          drawFallbackLogo(ctx, baseX, logoY, lockupScale);
-        }
+        // --- 9:16 CLOUD NO IMAGE: QUARANTINED MATH ---
+        if (isCloudNoImage && selectedFormat === '9:16') {
+          // 1. Logo & Program: Centered
+          const logoH = 46;
+          const logoX = exportWidth / 2;
+          const logoY = exportHeight * 0.10;
+          
+          if (logoImg) {
+            const logoW = logoH * (logoImg.width / logoImg.height);
+            ctx.drawImage(logoImg, logoX - (logoW / 2), logoY, logoW, logoH);
+          } else {
+            drawFallbackLogo(ctx, logoX - 50, logoY, 1.0);
+          }
 
-        const programGap = (isForum && selectedFormat === '16:9') ? 26 : isForum ? 30 : Math.round(logoH * 2);
-        const programY = logoY + logoH + programGap;
-        
-        ctx.fillStyle = '#FFFFFF';
-        ctx.font = `500 ${Math.round(48 * lockupScale)}px "Google Sans Flex", sans-serif`;
-        ctx.textAlign = 'left';
-        ctx.fillText(selectedCohort.name, baseX, programY);
+          // Strict 2x G padding
+          const programGap = logoH * 2;
+          const programY = logoY + logoH + programGap;
+          ctx.fillStyle = '#FFFFFF';
+          ctx.font = `500 48px "Google Sans Flex", sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.fillText(selectedCohort.name, logoX, programY + 35);
 
-        let mainCopyY: number;
-        if (isForum) {
-          const topClearance = isConnectingExperts16to9 ? Math.round(10 * 1.0) : (selectedFormat === '16:9') ? Math.round(110 * 1.0) : 210; 
-          mainCopyY = programY + topClearance;
+          // 2. Headline 1: Edge-to-Edge
+          const mainCopyY = exportHeight * 0.42;
+          const h1Text = "We’re building"; // Typographic apostrophe
+          ctx.font = `500 100px "Google Sans Flex", sans-serif`;
+          const baseWidth = ctx.measureText(h1Text).width;
+          const edgeToEdgeSize = 100 * (exportWidth / baseWidth);
+          
+          ctx.font = `500 ${edgeToEdgeSize}px "Google Sans Flex", sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.fillText(h1Text, exportWidth / 2, mainCopyY);
+
+          // 3. Headline 2: Considerably larger, flush right
+          const fasterSize = edgeToEdgeSize * 2.1;
+          ctx.font = `500 ${fasterSize}px "Google Sans Flex", sans-serif`;
+          ctx.textAlign = 'right';
+          ctx.fillText("faster", exportWidth, mainCopyY + fasterSize * 0.85);
+
+          // 4. CTA Pill: Centered, 1/3 from bottom
+          const pillH = 60;
+          const pillW = 250;
+          const ctaX = (exportWidth / 2) - (pillW / 2);
+          const ctaY = (exportHeight * 0.666) - pillH;
+
+          ctx.beginPath();
+          ctx.roundRect(ctaX, ctaY, pillW, pillH, pillH / 2);
+          ctx.fillStyle = 'rgba(18, 19, 23, 0.8)';
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          ctx.fillStyle = '#FFFFFF';
+          ctx.font = `500 24px "Google Sans Flex", sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('Find out more', ctaX + pillW / 2, ctaY + pillH / 2);
+
         } else if (isCloudNoImage) {
-          mainCopyY = selectedFormat === '16:9' ? exportHeight * 0.40 : selectedFormat === '9:16' ? exportHeight * 0.36 : exportHeight * 0.36;
-        } else {
-          mainCopyY = selectedFormat === '16:9' ? exportHeight * 0.32 : selectedFormat === '9:16' ? exportHeight * 0.22 : exportHeight * 0.35;
-        }
-
-        ctx.fillStyle = '#FFFFFF';
-        const baseCanvasHeadlineSize = selectedFormat === '16:9' ? 64 : 88;
-        const canvasHeadlineSize = Math.round(baseCanvasHeadlineSize * headlineScale);
-
-        if (isCloudNoImage) {
-          ctx.textAlign = 'left';
+          // Fallback logic for other Cloud Formats
           const isLandscape = selectedFormat === '16:9';
+          const baseX = exportWidth * (isLandscape ? 0.0625 : 0.074);
+          const logoY = exportHeight * (isLandscape ? 0.12 : 0.10);
+          const logoH = exportWidth * (isLandscape ? 0.045 : 0.075);
           
-          const buildSize = isLandscape ? exportWidth * 0.055 : exportWidth * 0.12;
-          const fasterSize = buildSize * 1.6;
-          
-          ctx.font = `500 ${Math.round(buildSize)}px "Google Sans Flex", sans-serif`;
-          ctx.fillText("We're building", baseX, mainCopyY);
+          if (logoImg) {
+            const logoW = logoH * (logoImg.width / logoImg.height);
+            ctx.drawImage(logoImg, baseX, logoY, logoW, logoH);
+          } else {
+            drawFallbackLogo(ctx, baseX, logoY, 1.0);
+          }
 
-          // Get exact width of "We're " to set the indent dynamically
-          const wereWidth = ctx.measureText("We're ").width;
-          const fasterOffsetX = isLandscape ? baseX + (wereWidth * 1.1) : baseX;
+          const programGap = logoH * 2;
+          ctx.fillStyle = '#FFFFFF';
+          ctx.font = `500 ${Math.round(exportWidth * (isLandscape ? 0.028 : 0.048))}px "Google Sans Flex", sans-serif`;
+          ctx.textAlign = 'left';
+          ctx.fillText(selectedCohort.name, baseX, logoY + logoH + programGap + (exportWidth * 0.028));
+
+          const mainCopyY = exportHeight * (isLandscape ? 0.44 : 0.38);
+          const buildSize = exportWidth * (isLandscape ? 0.0625 : 0.13);
+          const fasterSize = exportWidth * (isLandscape ? 0.14 : 0.32);
+
+          ctx.font = `500 ${Math.round(buildSize)}px "Google Sans Flex", sans-serif`;
+          ctx.fillText("We’re building", baseX, mainCopyY + buildSize);
 
           ctx.font = `500 ${Math.round(fasterSize)}px "Google Sans Flex", sans-serif`;
-          ctx.fillText("faster", fasterOffsetX, mainCopyY + Math.round(fasterSize * 0.85));
-          
+          const fasterOffsetX = baseX + (isLandscape ? exportWidth * 0.15 : 0);
+          ctx.fillText("faster", fasterOffsetX, mainCopyY + buildSize + (fasterSize * 0.85));
+
+          const pillH = exportWidth * (isLandscape ? 0.035 : 0.06);
+          const pillW = pillH * 4.2;
+          let ctaX = baseX;
+          let ctaY = exportHeight * 0.89 - pillH;
+
+          if (isLandscape) {
+            ctaX = exportWidth * 0.94 - pillW;
+            ctaY = exportHeight * 0.92 - pillH;
+          }
+
+          ctx.beginPath();
+          ctx.roundRect(ctaX, ctaY, pillW, pillH, pillH / 2);
+          ctx.fillStyle = 'rgba(18, 19, 23, 0.8)';
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          ctx.fillStyle = '#FFFFFF';
+          ctx.font = `500 ${Math.round(pillH * 0.4)}px "Google Sans Flex", sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('Find out more', ctaX + pillW / 2, ctaY + pillH / 2);
+
         } else {
+          // Standard Export for Forum and Accelerator
+          const lockupScale = (isForum && selectedFormat === '16:9') ? 0.825 : (isForum && selectedFormat === '9:16') ? 0.94 : shouldReduceLogoLockup ? 0.85 : 1.0;
+          const logoH = Math.round(36 * lockupScale);
+          const textX = 80;
+          const logoY = (isForum && selectedFormat === '16:9') ? 74 : (isForum && selectedFormat === '9:16') ? 48 : 80;
+          
+          if (logoImg) {
+            const logoAspect = logoImg.width / logoImg.height;
+            const logoW = logoH * logoAspect;
+            ctx.drawImage(logoImg, textX, logoY, logoW, logoH);
+          } else {
+            drawFallbackLogo(ctx, textX, logoY, lockupScale);
+          }
+
+          const programGap = (isForum && selectedFormat === '16:9') ? 26 : isForum ? 30 : Math.round(logoH * 2);
+          const programY = logoY + logoH + programGap;
+          ctx.fillStyle = '#FFFFFF';
+          ctx.font = `500 ${Math.round(48 * lockupScale)}px "Google Sans Flex", sans-serif`;
+          ctx.textAlign = 'left';
+          ctx.fillText(selectedCohort.name, textX, programY);
+
+          let mainCopyY: number;
+          if (isForum) {
+            const topClearance = isConnectingExperts16to9 ? Math.round(10 * 1.0) : (selectedFormat === '16:9') ? Math.round(110 * 1.0) : 210; 
+            mainCopyY = programY + topClearance;
+          } else {
+            mainCopyY = selectedFormat === '16:9' ? exportHeight * 0.32 : selectedFormat === '9:16' ? exportHeight * 0.22 : exportHeight * 0.35;
+          }
+
+          ctx.fillStyle = '#FFFFFF';
+          const baseCanvasHeadlineSize = selectedFormat === '16:9' ? 64 : 88;
+          const canvasHeadlineSize = Math.round(baseCanvasHeadlineSize * headlineScale);
+
           ctx.textAlign = 'left';
           ctx.font = `500 ${canvasHeadlineSize}px "Google Sans Flex", sans-serif`;
           const maxWidth = exportWidth * (isForum && selectedFormat === '16:9' ? 0.60 : selectedFormat === '16:9' ? 0.62 : 0.82);
@@ -433,102 +536,48 @@ export default function SocialAssetGenerator() {
               const testLine = line + words[n] + ' ';
               const metrics = ctx.measureText(testLine);
               if (metrics.width > maxWidth && n > 0) {
-                ctx.fillText(line, baseX, currentY);
+                ctx.fillText(line, textX, currentY);
                 line = words[n] + ' ';
                 currentY += lineWrapStep;
               } else {
                 line = testLine;
               }
             }
-            ctx.fillText(line, baseX, currentY);
+            ctx.fillText(line, textX, currentY);
             currentY += lineWrapStep;
           }
-        }
 
-        if (currentSupportingText && !isCloudNoImage) {
-          const supportingFontSize = selectedFormat === '16:9' ? 30 : isForum9to16 ? 28 : isAcc9to16 ? 32 : 40;
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-          ctx.textAlign = 'left';
-          ctx.font = `500 ${supportingFontSize}px "Google Sans Flex", sans-serif`;
-          ctx.fillText(currentSupportingText, baseX, mainCopyY + (canvasHeadlineSize * 1.15) * headlineToRender.split('\n').length + 12);
-        }
-
-        if (userImg && !isCloudNoImage) {
-          let userW = 351; let userH = 439;
-          let userX = exportWidth - userW - 28; let userY = exportHeight - userH - 28;
-
-          if (isForum16to9) {
-            userH = Math.round(exportHeight * 0.75); userW = Math.round(userH * 4 / 5);
-            userX = exportWidth - userW - 32; userY = exportHeight - userH - 32;
-          } else if (selectedFormat === '1:1') {
-            userW = 351; userH = 351;
-            userX = exportWidth - userW - 28; userY = exportHeight - userH - 28;
-          } else if (selectedFormat === '16:9') {
-            userW = 460; userH = Math.round(userW * 9 / 16); 
-            userX = exportWidth - userW - 32; userY = exportHeight - userH - 32;
-          } else if (selectedFormat === '9:16') {
-            userW = Math.round(351 * 1.25); userH = uploadType === 'logo' ? userW : Math.round(userW * 5 / 4);
-            userX = exportWidth - userW - 32; userY = exportHeight - userH - 180; 
+          if (currentSupportingText && !isCloudNoImage) {
+            const supportingFontSize = selectedFormat === '16:9' ? 30 : isForum9to16 ? 28 : isAcc9to16 ? 32 : 40;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+            ctx.textAlign = 'left';
+            ctx.font = `500 ${supportingFontSize}px "Google Sans Flex", sans-serif`;
+            ctx.fillText(currentSupportingText, textX, mainCopyY + (canvasHeadlineSize * 1.15) * headlineToRender.split('\n').length + 12);
           }
 
-          if (uploadScale !== 1.0) {
-            const origW = userW; const origH = userH;
-            userW = Math.round(userW * uploadScale); userH = Math.round(userH * uploadScale);
-            userX += (origW - userW); userY += (origH - userH); 
-          }
+          const ctaScale = (selectedFormat === '16:9' || selectedFormat === '9:16') ? 0.75 : 1.0;
+          const pillW = Math.round(240 * ctaScale);
+          const pillH = Math.round(56 * ctaScale);
+          
+          let ctaX = textX;
+          let ctaY = selectedFormat === '9:16' ? exportHeight - 220 : exportHeight - Math.round(120 * ctaScale);
 
           ctx.save();
-          ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
-          ctx.shadowBlur = 24;
           ctx.beginPath();
-          ctx.roundRect(userX, userY, userW, userH, 28);
+          ctx.roundRect(ctaX, ctaY, pillW, pillH, pillH / 2);
+          ctx.fillStyle = 'rgba(18, 19, 23, 0.8)';
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
 
-          if (uploadType === 'logo') {
-            ctx.fillStyle = '#FFFFFF'; ctx.fill(); ctx.shadowBlur = 0; ctx.clip();
-            const pad = 36; const innerW = userW - pad * 2; const innerH = userH - pad * 2;
-            const imgAspect = userImg.width / userImg.height; const innerAspect = innerW / innerH;
-            let drawW = innerW; let drawH = innerH;
-            if (imgAspect > innerAspect) { drawW = innerW; drawH = innerW / imgAspect; }
-            else { drawH = innerH; drawW = innerH * imgAspect; }
-            ctx.drawImage(userImg, userX + pad + (innerW - drawW) / 2, userY + pad + (innerH - drawH) / 2, drawW, drawH);
-          } else {
-            ctx.shadowBlur = 0; ctx.clip();
-            const imgAspect = userImg.width / userImg.height; const containerAspect = userW / userH;
-            let drawW = userW; let drawH = userH;
-            if (imgAspect > containerAspect) { drawH = userH; drawW = userH * imgAspect; }
-            else { drawW = userW; drawH = userW / imgAspect; }
-            ctx.drawImage(userImg, userX + (userW - drawW) / 2, userY + (userH - drawH) / 2, drawW, drawH);
-          }
+          ctx.fillStyle = '#FFFFFF';
+          ctx.font = `500 ${Math.round(22 * ctaScale)}px "Google Sans Flex", sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('Find out more', ctaX + pillW / 2, ctaY + pillH / 2);
           ctx.restore();
         }
-
-        const ctaScale = (selectedFormat === '16:9' || selectedFormat === '9:16') ? 0.75 : 1.0;
-        const pillW = Math.round(240 * ctaScale);
-        const pillH = Math.round(56 * ctaScale);
-        
-        let ctaX = baseX;
-        let ctaY = selectedFormat === '9:16' ? exportHeight - 220 : exportHeight - Math.round(120 * ctaScale);
-
-        if (isCloudNoImage && selectedFormat === '16:9') {
-          ctaX = exportWidth - pillW - 120;
-          ctaY = exportHeight - pillH - 80;
-        }
-
-        ctx.save();
-        ctx.beginPath();
-        ctx.roundRect(ctaX, ctaY, pillW, pillH, pillH / 2);
-        ctx.fillStyle = 'rgba(18, 19, 23, 0.8)';
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        ctx.fillStyle = '#FFFFFF';
-        ctx.font = `500 ${Math.round(22 * ctaScale)}px "Google Sans Flex", sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('Find out more', ctaX + pillW / 2, ctaY + pillH / 2);
-        ctx.restore();
 
         if (elapsed < durationMs) animId = requestAnimationFrame(renderRecordingFrame);
         else recorder.stop();
@@ -660,40 +709,65 @@ export default function SocialAssetGenerator() {
                 <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/35 pointer-events-none" />
               </div>
 
-              {isCloudNoImage ? (
-                <div className="absolute inset-0 z-10 pointer-events-none p-7 sm:p-9 md:p-10">
+              {/* --- 9:16 HTML OVERLAY --- */}
+              {isCloudNoImage && selectedFormat === '9:16' ? (
+                <div className="absolute inset-0 z-10 pointer-events-none">
                   
-                  {/* Left-Aligned Logo Lockup */}
+                  {/* Centered Logo Lockup & 2x G Spacing */}
+                  <div className="absolute top-[10%] left-1/2 -translate-x-1/2 flex flex-col items-center w-full">
+                    <img 
+                      src="/assets/gfs-logo-white.png" 
+                      alt="Google for Startups Logo"
+                      className="h-[5.5cqi] w-auto"
+                    />
+                    <div className="text-white font-medium text-[4.8cqi] mt-[11cqi]">
+                      {selectedCohort.name}
+                    </div>
+                  </div>
+
+                  {/* Edge-to-Edge Math Typography */}
+                  <div className="absolute top-[42%] w-full flex flex-col tracking-normal">
+                    <div className="text-white font-medium text-center leading-none w-full" style={{ fontSize: '15.6cqi' }}>
+                      We’re building
+                    </div>
+                    <div className="text-white font-medium text-right leading-[0.85] mt-2 w-full" style={{ fontSize: '33cqi' }}>
+                      faster
+                    </div>
+                  </div>
+
+                  {/* 1/3 Bottom CTA Pill */}
+                  <div className="absolute left-1/2 -translate-x-1/2 bottom-[33.33%] w-auto inline-flex items-center">
+                    <div className="px-6 py-2.5 rounded-full border border-white/40 bg-[#121317]/80 text-white font-medium text-xs sm:text-sm text-center">
+                      Find out more
+                    </div>
+                  </div>
+
+                </div>
+              ) : isCloudNoImage ? (
+                <div className="absolute inset-0 z-10 pointer-events-none p-7 sm:p-9 md:p-10">
                   <div className="flex flex-col items-start">
                     <img 
                       src="/assets/gfs-logo-white.png" 
                       alt="Google for Startups Logo"
                       className={`${selectedFormat === '16:9' ? 'h-4 sm:h-5 md:h-6' : 'h-5 sm:h-6 md:h-7'} w-auto`}
                     />
-                    {/* Fixed 2x G Spacing */}
                     <div className={`${selectedFormat === '16:9' ? 'mt-6 sm:mt-8 md:mt-10 text-[18px] sm:text-[20px] md:text-[24px]' : 'mt-8 sm:mt-10 md:mt-12 text-[20px] sm:text-[24px] md:text-[28px]'} text-white font-medium`}>
                       {selectedCohort.name}
                     </div>
                   </div>
-
-                  {/* Standard Tailwind Copy Classes - No Wrapping */}
                   <div className={`absolute left-7 sm:left-9 md:left-10 text-left whitespace-nowrap ${selectedFormat === '16:9' ? 'top-[40%]' : 'top-[36%]'}`}>
-                    <div className={`${selectedFormat === '16:9' ? 'text-[28px] sm:text-[36px] md:text-[42px]' : 'text-[40px] sm:text-[50px] md:text-[56px]'} text-white font-medium leading-[1.05]`}>
-                      We're building
+                    <div className={`${selectedFormat === '16:9' ? 'text-[28px] sm:text-[36px] md:text-[42px]' : 'text-[40px] sm:text-[50px] md:text-[56px]'} text-white font-medium leading-[1.05] tracking-normal`}>
+                      We’re building
                     </div>
-                    {/* Indented automatically for 16:9, flush left otherwise */}
-                    <div className={`${selectedFormat === '16:9' ? 'text-[50px] sm:text-[68px] md:text-[80px] ml-12 sm:ml-16 md:ml-24' : 'text-[64px] sm:text-[80px] md:text-[90px] ml-0'} text-white font-medium leading-[0.85] mt-1`}>
+                    <div className={`${selectedFormat === '16:9' ? 'text-[50px] sm:text-[68px] md:text-[80px] ml-12 sm:ml-16 md:ml-24' : 'text-[64px] sm:text-[80px] md:text-[90px] ml-0'} text-white font-medium leading-[0.85] mt-1 tracking-normal`}>
                       faster
                     </div>
                   </div>
-
-                  {/* Brand CTA Pill */}
                   <div className={`absolute w-auto inline-flex items-center pointer-events-none ${selectedFormat === '16:9' ? 'right-10 sm:right-12 bottom-8 sm:bottom-10 scale-90 origin-bottom-right' : 'left-7 sm:left-9 md:left-10 bottom-16 sm:bottom-20 scale-[0.85] origin-bottom-left'}`}>
                     <div className="px-5 py-2 sm:px-6 sm:py-2.5 rounded-full border border-white/40 bg-[#121317]/80 text-white font-medium text-xs sm:text-sm text-center">
                       Find out more
                     </div>
                   </div>
-
                 </div>
               ) : (
                 <>
