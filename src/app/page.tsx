@@ -90,7 +90,6 @@ export default function SocialAssetGenerator() {
   const isForum = selectedCohort.id === 'forum';
 
   const isCloudNoImage = isCloud && (normalizedHeadline.includes('(No image)') || normalizedHeadline.includes('(No Logo)'));
-  const isCenteredLayout = isCloudNoImage && selectedFormat !== '16:9';
   const headlineLen = currentHeadline.length;
 
   const baseSizeRem = selectedFormat === '16:9' ? 2.25 : 3.0;
@@ -102,7 +101,7 @@ export default function SocialAssetGenerator() {
     else if (isAccelerator) headlineScale = headlineLen <= 13 ? 1.575 : 0.96;
   } else if (selectedFormat === '9:16') {
     if (isForum) headlineScale = 0.9;
-    else if (isCloud) headlineScale = isCloudNoImage ? 0.95 : 1.2;
+    else if (isCloud) headlineScale = isCloudNoImage ? 0.9 : 1.2;
     else if (isAccelerator) headlineScale = headlineLen <= 13 ? 0.8 : 0.64;
   } else if (selectedFormat === '1:1') {
     if (isCloud) headlineScale = isCloudNoImage ? 1.05 : 1.2;
@@ -113,10 +112,6 @@ export default function SocialAssetGenerator() {
   }
 
   const headlineClass = `text-[calc(var(--base-size)*${headlineScale})]`;
-
-  const mainHeadlineRem = baseSizeRem * headlineScale;
-  const buildHeadlineRem = mainHeadlineRem * 1.15;
-  const fasterHeadlineRem = buildHeadlineRem * 1.7;
 
   const isConnectingExperts = isForum && normalizedHeadline.includes('Connecting with experts');
   const isConnectingExperts9to16 = isConnectingExperts && selectedFormat === '9:16';
@@ -168,73 +163,54 @@ export default function SocialAssetGenerator() {
   if (selectedFormat === '16:9' && uploadType !== 'photo') uploadPanelAspectClass = 'aspect-video';
 
   let uploadPanelPlacementClass = '';
-  if (isForum16to9) uploadPanelPlacementClass = 'bottom-3 right-3 sm:bottom-4 sm:right-4 h-[75%] w-auto max-w-none';
-  else if (selectedFormat === '16:9') uploadPanelPlacementClass = 'bottom-3 right-3 sm:bottom-4 sm:right-4 w-44 sm:w-56 md:w-68';
-  else if (selectedFormat === '9:16') uploadPanelPlacementClass = 'bottom-16 right-3 sm:bottom-20 sm:right-4 md:bottom-24 md:right-5 w-40 sm:w-48 md:w-56';
-  else uploadPanelPlacementClass = 'bottom-2 right-2 sm:bottom-3 sm:right-3 w-32 sm:w-36 md:w-44';
-
-  let ctaPlacementClass = '';
-  if (isCenteredLayout) {
-    ctaPlacementClass = 'absolute z-10 w-auto inline-flex items-center pointer-events-none transition-all duration-300 ease-in-out left-1/2 -translate-x-1/2 ';
-    if (selectedFormat === '9:16') ctaPlacementClass += 'bottom-16 sm:bottom-20 md:bottom-24 scale-90';
-    else ctaPlacementClass += 'bottom-7 sm:bottom-8 md:bottom-10 scale-100';
-  } else if (isCloudNoImage && selectedFormat === '16:9') {
-    ctaPlacementClass = 'absolute z-10 w-auto inline-flex items-center pointer-events-none transition-all duration-300 ease-in-out right-10 sm:right-12 md:right-14 bottom-8 sm:bottom-10 scale-[0.80] origin-bottom-right';
-  } else {
-    ctaPlacementClass = 'absolute z-10 w-auto inline-flex items-center pointer-events-none transition-all duration-300 ease-in-out left-7 sm:left-9 md:left-10 ';
-    if (selectedFormat === '16:9') ctaPlacementClass += 'bottom-3.5 sm:bottom-4 md:bottom-5 scale-[0.70] origin-bottom-left';
-    else if (selectedFormat === '9:16') ctaPlacementClass += 'bottom-16 sm:bottom-20 md:bottom-24 scale-[0.70] origin-bottom-left';
-    else ctaPlacementClass += 'bottom-7 sm:bottom-8 md:bottom-9 scale-100 origin-bottom-left';
-  }
-
-  let copyPlacementClass = 'absolute z-10 pointer-events-none transition-all duration-300 ease-in-out text-left ';
-  if (isCloudNoImage) {
-    copyPlacementClass += 'left-8 sm:left-10 md:left-12 ';
-    if (selectedFormat === '16:9') copyPlacementClass += 'top-[34%] max-w-[85%]';
-    else if (selectedFormat === '9:16') copyPlacementClass += 'top-[38%] right-8 sm:right-10 md:right-12';
-    else copyPlacementClass += 'top-[36%] right-8 sm:right-10 md:right-12';
-  } else {
-    copyPlacementClass += 'left-7 sm:left-9 md:left-10 ';
-    if (selectedFormat === '16:9') copyPlacementClass += 'top-[28%] sm:top-[30%] max-w-[62%] sm:max-w-[65%]';
-    else if (selectedFormat === '9:16') copyPlacementClass += 'top-[22%] sm:top-[24%] max-w-[86%] sm:max-w-[88%]';
-    else copyPlacementClass += 'top-[33%] sm:top-[35%] max-w-[86%] sm:max-w-[88%]';
-  }
-
-  let logoLockupPlacementClass = 'absolute z-10 flex flex-col pointer-events-none transition-all duration-300 ease-in-out items-start text-left ';
-  if (isCloudNoImage) {
-    logoLockupPlacementClass += 'left-8 sm:left-10 md:left-12 ';
-  } else {
-    logoLockupPlacementClass += 'left-7 sm:left-9 md:left-10 ';
-  }
-
-  if (selectedFormat === '16:9') {
-    logoLockupPlacementClass += (isForum ? 'top-9 sm:top-11 ' : 'top-8 sm:top-10 ');
+  if (isForum16to9) {
+    uploadPanelPlacementClass = 'bottom-3 right-3 sm:bottom-4 sm:right-4 h-[75%] w-auto max-w-none';
+  } else if (selectedFormat === '16:9') {
+    uploadPanelPlacementClass = 'bottom-3 right-3 sm:bottom-4 sm:right-4 w-44 sm:w-56 md:w-68';
   } else if (selectedFormat === '9:16') {
-    logoLockupPlacementClass += 'top-12 sm:top-14 ';
+    uploadPanelPlacementClass = 'bottom-16 right-3 sm:bottom-20 sm:right-4 md:bottom-24 md:right-5 w-40 sm:w-48 md:w-56';
   } else {
-    logoLockupPlacementClass += 'top-10 sm:top-12 ';
+    uploadPanelPlacementClass = 'bottom-2 right-2 sm:bottom-3 sm:right-3 w-32 sm:w-36 md:w-44';
   }
 
-  if (isForum && selectedFormat === '9:16') {
-    logoLockupPlacementClass += '-translate-y-3 sm:-translate-y-4 ';
-  }
-  
-  if (shouldReduceLogoLockup) {
-      logoLockupPlacementClass += ' scale-[0.85] origin-top-left';
-  } else {
-      logoLockupPlacementClass += ' scale-100 origin-top-left';
-  }
+  // STANDARD CTA PILL & COPY CLASSES (Used when not Cloud No Image)
+  let ctaPlacementClass = 'absolute z-10 w-auto inline-flex items-center pointer-events-none transition-all duration-300 ease-in-out left-7 sm:left-9 md:left-10 ';
+  if (selectedFormat === '16:9') ctaPlacementClass += 'bottom-3.5 sm:bottom-4 md:bottom-5 scale-[0.70] origin-bottom-left';
+  else if (selectedFormat === '9:16') ctaPlacementClass += 'bottom-16 sm:bottom-20 md:bottom-24 scale-[0.70] origin-bottom-left';
+  else ctaPlacementClass += 'bottom-7 sm:bottom-8 md:bottom-9 scale-100 origin-bottom-left';
+
+  let copyPlacementClass = 'absolute z-10 pointer-events-none transition-all duration-300 ease-in-out text-left left-7 sm:left-9 md:left-10 ';
+  if (selectedFormat === '16:9') copyPlacementClass += 'top-[28%] sm:top-[30%] max-w-[62%] sm:max-w-[65%]';
+  else if (selectedFormat === '9:16') copyPlacementClass += 'top-[22%] sm:top-[24%] max-w-[86%] sm:max-w-[88%]';
+  else copyPlacementClass += 'top-[33%] sm:top-[35%] max-w-[86%] sm:max-w-[88%]';
+
+  let logoLockupPlacementClass = 'absolute z-10 flex flex-col pointer-events-none transition-all duration-300 ease-in-out items-start text-left left-7 sm:left-9 md:left-10 ';
+  if (selectedFormat === '16:9') logoLockupPlacementClass += (isForum ? 'top-9 sm:top-11 ' : 'top-8 sm:top-10 ');
+  else if (selectedFormat === '9:16') logoLockupPlacementClass += 'top-12 sm:top-14 ';
+  else logoLockupPlacementClass += 'top-10 sm:top-12 ';
+
+  if (isForum && selectedFormat === '9:16') logoLockupPlacementClass += '-translate-y-3 sm:-translate-y-4 ';
+  if (shouldReduceLogoLockup) logoLockupPlacementClass += ' scale-[0.85] origin-top-left';
+  else logoLockupPlacementClass += ' scale-100 origin-top-left';
 
   const currentAssetSrc = selectedCohort.assets[assetType as keyof typeof selectedCohort.assets];
 
+  // Perfectly pin background to protect streaks
   let mediaStyle: React.CSSProperties = { width: '100%', height: '100%', objectFit: 'cover' };
   if (selectedCohort.id === 'forum') {
      mediaStyle.transform = 'translate(25%, -25%) scale(2.2)';
   } else if (selectedCohort.id === 'accelerator') {
      mediaStyle.transform = 'translate(25%, 25%) scale(1.5)';
   } else if (selectedCohort.id === 'cloud') {
-     mediaStyle.objectPosition = 'right center';
-     mediaStyle.transform = 'scale(1.2)';
+     if (selectedFormat === '16:9') {
+         mediaStyle.transform = 'scaleX(-1) scale(1.15)'; // Flip video horizontally to anchor streaks on the right
+         mediaStyle.transformOrigin = 'center center';
+         mediaStyle.objectPosition = 'center center';
+     } else {
+         mediaStyle.transform = 'scale(1.2)';
+         mediaStyle.transformOrigin = 'left center'; // Safely pin to left edge to keep streaks visible
+         mediaStyle.objectPosition = 'left center';
+     }
   }
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -340,12 +316,15 @@ export default function SocialAssetGenerator() {
           ctx.scale(1.5, 1.5);
           ctx.drawImage(media, -dw/2, -dh/2, dw, dh);
         } else if (selectedCohort.id === 'cloud') {
-          const scale = 1.2;
-          const scaledW = dw * scale;
-          const scaledH = dh * scale;
-          const tx = exportWidth - scaledW; // Right-anchor math
-          const ty = (exportHeight - scaledH) / 2;
-          ctx.drawImage(media, tx, ty, scaledW, scaledH);
+          if (selectedFormat === '16:9') {
+              ctx.translate(exportWidth/2, exportHeight/2);
+              ctx.scale(-1.15, 1.15); // Flip background on Canvas
+              ctx.drawImage(media, -dw/2, -dh/2, dw, dh);
+          } else {
+              ctx.translate(0, exportHeight/2);
+              ctx.scale(1.2, 1.2);
+              ctx.drawImage(media, 0, -dh/2, dw, dh); // Pin Left on Canvas
+          }
         } else {
           const cx = (exportWidth - dw) / 2;
           const cy = (exportHeight - dh) / 2;
@@ -394,31 +373,36 @@ export default function SocialAssetGenerator() {
         ctx.fillRect(0, 0, exportWidth, exportHeight);
 
         const lockupScale = (isForum && selectedFormat === '16:9') ? 0.825 : (isForum && selectedFormat === '9:16') ? 0.94 : shouldReduceLogoLockup ? 0.85 : 1.0;
-        const logoH = Math.round(36 * lockupScale);
-        const textX = isCloudNoImage ? 110 : 80;
+        const logoH = Math.round(46 * lockupScale);
+        
+        // BASE X MARGIN: Responsive to exact canvas dimensions
+        const baseX = selectedFormat === '16:9' ? exportWidth * 0.0625 : exportWidth * 0.074;
+        
         const logoY = (isForum && selectedFormat === '16:9') ? 74 : (isForum && selectedFormat === '9:16') ? 48 : (isCloudNoImage && selectedFormat === '9:16') ? 110 : 80;
         
         if (logoImg) {
           const logoAspect = logoImg.width / logoImg.height;
           const logoW = logoH * logoAspect;
-          ctx.drawImage(logoImg, textX, logoY, logoW, logoH);
+          ctx.drawImage(logoImg, baseX, logoY, logoW, logoH);
         } else {
-          drawFallbackLogo(ctx, textX, logoY, lockupScale);
+          drawFallbackLogo(ctx, baseX, logoY, lockupScale);
         }
 
+        // STRICT 2x G SPACING
         const programGap = (isForum && selectedFormat === '16:9') ? 26 : isForum ? 30 : Math.round(logoH * 2);
         const programY = logoY + logoH + programGap;
+        
         ctx.fillStyle = '#FFFFFF';
-        ctx.font = `500 ${Math.round(48 * lockupScale)}px "Google Sans Flex", sans-serif`;
+        ctx.font = `500 ${Math.round(56 * lockupScale)}px "Google Sans Flex", sans-serif`;
         ctx.textAlign = 'left';
-        ctx.fillText(selectedCohort.name, textX, programY);
+        ctx.fillText(selectedCohort.name, baseX, programY);
 
         let mainCopyY: number;
         if (isForum) {
           const topClearance = isConnectingExperts16to9 ? Math.round(10 * 1.0) : (selectedFormat === '16:9') ? Math.round(110 * 1.0) : 210; 
           mainCopyY = programY + topClearance;
         } else if (isCloudNoImage) {
-          mainCopyY = selectedFormat === '16:9' ? exportHeight * 0.44 : exportHeight * 0.42;
+          mainCopyY = selectedFormat === '16:9' ? exportHeight * 0.44 : selectedFormat === '9:16' ? exportHeight * 0.40 : exportHeight * 0.40;
         } else {
           mainCopyY = selectedFormat === '16:9' ? exportHeight * 0.32 : selectedFormat === '9:16' ? exportHeight * 0.22 : exportHeight * 0.35;
         }
@@ -430,17 +414,23 @@ export default function SocialAssetGenerator() {
         if (isCloudNoImage) {
           ctx.textAlign = 'left';
           
-          const buildSize = Math.round(canvasHeadlineSize * 1.15);
-          const fasterSize = Math.round(buildSize * 1.7);
-
+          const buildSize = exportWidth * (selectedFormat === '16:9' ? 0.0625 : 0.12);
+          const fasterSize = exportWidth * (selectedFormat === '16:9' ? 0.135 : 0.30);
+          
+          // Left-aligned edge-to-edge calculation
           ctx.font = `500 ${buildSize}px "Google Sans Flex", sans-serif`;
-          ctx.fillText("We're building", textX, mainCopyY);
+          ctx.fillText("We're building", baseX, mainCopyY);
 
-          // Precisely calculate the width of the first word natively to indent 'faster' correctly
-          const wereWidth = ctx.measureText("We're ").width;
+          // Perfectly indent 'faster' to match exact layout offsets
+          const fasterOffsetX = baseX + exportWidth * (
+             selectedFormat === '16:9' ? 0.15 : 
+             selectedFormat === '1:1' ? 0.12 : 
+             selectedFormat === '4:5' ? 0.10 : 0.05
+          );
 
           ctx.font = `500 ${fasterSize}px "Google Sans Flex", sans-serif`;
-          ctx.fillText("faster", textX + wereWidth, mainCopyY + Math.round(fasterSize * 0.82));
+          ctx.fillText("faster", fasterOffsetX, mainCopyY + Math.round(fasterSize * 0.85));
+          
         } else {
           ctx.textAlign = 'left';
           ctx.font = `500 ${canvasHeadlineSize}px "Google Sans Flex", sans-serif`;
@@ -456,14 +446,14 @@ export default function SocialAssetGenerator() {
               const testLine = line + words[n] + ' ';
               const metrics = ctx.measureText(testLine);
               if (metrics.width > maxWidth && n > 0) {
-                ctx.fillText(line, textX, currentY);
+                ctx.fillText(line, baseX, currentY);
                 line = words[n] + ' ';
                 currentY += lineWrapStep;
               } else {
                 line = testLine;
               }
             }
-            ctx.fillText(line, textX, currentY);
+            ctx.fillText(line, baseX, currentY);
             currentY += lineWrapStep;
           }
         }
@@ -473,7 +463,7 @@ export default function SocialAssetGenerator() {
           ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
           ctx.textAlign = 'left';
           ctx.font = `500 ${supportingFontSize}px "Google Sans Flex", sans-serif`;
-          ctx.fillText(currentSupportingText, textX, mainCopyY + (canvasHeadlineSize * 1.15) * headlineToRender.split('\n').length + 12);
+          ctx.fillText(currentSupportingText, baseX, mainCopyY + (canvasHeadlineSize * 1.15) * headlineToRender.split('\n').length + 12);
         }
 
         if (userImg && !isCloudNoImage) {
@@ -529,19 +519,19 @@ export default function SocialAssetGenerator() {
         const pillW = Math.round(240 * ctaScale);
         const pillH = Math.round(56 * ctaScale);
         
-        let ctaX = textX;
+        let ctaX = isCloudNoImage && selectedFormat !== '16:9' ? (exportWidth / 2) - (pillW / 2) : baseX;
         let ctaY = selectedFormat === '9:16' ? exportHeight - 220 : exportHeight - Math.round(120 * ctaScale);
 
         if (isCloudNoImage && selectedFormat === '16:9') {
           ctaX = exportWidth - pillW - 120;
           ctaY = exportHeight - pillH - 80;
-        } else if (isCenteredLayout) {
-          ctaX = (exportWidth / 2) - (pillW / 2);
         }
 
         ctx.save();
         ctx.beginPath();
         ctx.roundRect(ctaX, ctaY, pillW, pillH, pillH / 2);
+        ctx.fillStyle = 'rgba(18, 19, 23, 0.6)'; // Dark glassy fill
+        ctx.fill();
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
         ctx.lineWidth = 1.5;
         ctx.stroke();
@@ -683,89 +673,124 @@ export default function SocialAssetGenerator() {
                 <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/35 pointer-events-none" />
               </div>
 
-              <div className={logoLockupPlacementClass}>
-                <img
-                  src="/assets/gfs-logo-white.png"
-                  alt="Google for Startups Logo"
-                  className={`${(isForum && selectedFormat === '16:9') ? 'h-5 sm:h-5.5 md:h-[24px]' : 'h-5 sm:h-6 md:h-[26px]'} w-auto object-contain block transition-all duration-300`}
-                  onError={(e) => {
-                    const target = e.currentTarget;
-                    target.style.display = 'none';
-                    const parent = target.parentElement;
-                    if (parent && !parent.querySelector('.vector-logo-fallback')) {
-                      const div = document.createElement('div');
-                      div.className = `vector-logo-fallback flex items-center gap-2 text-white font-medium ${isForum16or9to16 ? 'text-xs' : 'text-base'}`;
-                      div.innerHTML = `<span class="w-6 h-6 rounded-full border-2 border-white flex items-center justify-center font-bold text-xs">G</span> Google for Startups`;
-                      parent.prepend(div);
-                    }
-                  }}
-                />
-                <p className={`mt-[52px] text-[20px] sm:text-[24px] md:text-[26px] text-white font-medium transition-all duration-300`}>
-                  {selectedCohort.name}
-                </p>
+              {isCloudNoImage ? (
+                <div className="absolute inset-0 z-10 pointer-events-none" style={{ padding: selectedFormat === '16:9' ? '6.25cqi' : '7.4cqi' }}>
+                  
+                  {/* Left-Aligned Cloud Logo Lockup with 2x G Spacing */}
+                  <div style={{ position: 'absolute', top: selectedFormat === '16:9' ? '7cqi' : '7.4cqi', left: selectedFormat === '16:9' ? '6.25cqi' : '7.4cqi' }}>
+                    <img 
+                      src="/assets/gfs-logo-white.png" 
+                      alt="Google for Startups Logo"
+                      style={{ height: selectedFormat === '16:9' ? '2.4cqi' : '4.25cqi', width: 'auto', display: 'block' }}
+                      onError={(e) => {
+                        const target = e.currentTarget; target.style.display = 'none';
+                        const parent = target.parentElement;
+                        if (parent && !parent.querySelector('.vector-logo-fallback')) {
+                          const div = document.createElement('div');
+                          div.className = `vector-logo-fallback flex items-center gap-2 text-white font-medium ${isForum16or9to16 ? 'text-xs' : 'text-base'}`;
+                          div.innerHTML = `<span class="w-6 h-6 rounded-full border-2 border-white flex items-center justify-center font-bold text-xs">G</span> Google for Startups`;
+                          parent.prepend(div);
+                        }
+                      }}
+                    />
+                    <div style={{ 
+                      marginTop: selectedFormat === '16:9' ? '4.8cqi' : '8.5cqi', 
+                      fontSize: selectedFormat === '16:9' ? '2.9cqi' : '5.2cqi', 
+                      color: 'white', 
+                      fontWeight: 500 
+                    }}>
+                      {selectedCohort.name}
+                    </div>
+                  </div>
 
-                {isForum && (
-                  <div
-                    className={`${
-                      isConnectingExperts16to9
-                        ? 'mt-4 sm:mt-5 md:mt-6 max-w-[55%] sm:max-w-[58%] md:max-w-[60%]'
-                        : (isForum && selectedFormat === '16:9')
-                        ? 'mt-10 sm:mt-12 md:mt-14 max-w-[55%] sm:max-w-[58%] md:max-w-[60%]'
-                        : isConnectingExperts
-                        ? 'mt-14 sm:mt-16 md:mt-[4.5rem] max-w-[90%] sm:max-w-[92%] mb-4'
-                        : 'mt-16 sm:mt-20 md:mt-24 max-w-[85%] sm:max-w-[88%] mb-6'
-                    } pointer-events-none transition-all duration-300 ease-in-out text-left`}
-                  >
-                    <h2
-                      style={{ fontSize: `${mainHeadlineRem}rem`, lineHeight: 1.1 }}
-                      className={`text-white font-medium drop-shadow-sm transition-all duration-300 text-left`}
-                    >
-                      {headlineToRender.split('\n').map((line, i) => (
-                        <span key={i} className="block whitespace-nowrap">{line}</span>
-                      ))}
-                    </h2>
-                    {currentSupportingText && (
-                      <p className={`mt-2.5 sm:mt-3 text-white/90 font-medium ${supportingTextSizeClass} drop-shadow-sm transition-all duration-300 text-left`}>
-                        {currentSupportingText}
-                      </p>
+                  {/* HTML Inline Left-Aligned & Offset Math Matching Canvas exactly */}
+                  <div style={{ position: 'absolute', top: selectedFormat === '16:9' ? '44cqi' : '38cqi', left: selectedFormat === '16:9' ? '6.25cqi' : '7.4cqi', textAlign: 'left' }}>
+                    <div style={{ fontSize: selectedFormat === '16:9' ? '6.25cqi' : '12cqi', lineHeight: 1.05, color: 'white', fontWeight: 500 }}>
+                      We're building
+                    </div>
+                    <div style={{ 
+                      fontSize: selectedFormat === '16:9' ? '13.5cqi' : '30cqi', 
+                      lineHeight: 0.85, 
+                      marginTop: '4px',
+                      marginLeft: selectedFormat === '16:9' ? '15cqi' : selectedFormat === '1:1' ? '12cqi' : selectedFormat === '4:5' ? '10cqi' : '5cqi',
+                      color: 'white', 
+                      fontWeight: 500 
+                    }}>
+                      faster
+                    </div>
+                  </div>
+
+                </div>
+              ) : (
+                <>
+                  <div className={logoLockupPlacementClass}>
+                    <img
+                      src="/assets/gfs-logo-white.png"
+                      alt="Google for Startups Logo"
+                      className={`${(isForum && selectedFormat === '16:9') ? 'h-5 sm:h-5.5 md:h-[24px]' : 'h-5 sm:h-6 md:h-[26px]'} w-auto object-contain block transition-all duration-300`}
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        target.style.display = 'none';
+                        const parent = target.parentElement;
+                        if (parent && !parent.querySelector('.vector-logo-fallback')) {
+                          const div = document.createElement('div');
+                          div.className = `vector-logo-fallback flex items-center gap-2 text-white font-medium ${isForum16or9to16 ? 'text-xs' : 'text-base'}`;
+                          div.innerHTML = `<span class="w-6 h-6 rounded-full border-2 border-white flex items-center justify-center font-bold text-xs">G</span> Google for Startups`;
+                          parent.prepend(div);
+                        }
+                      }}
+                    />
+                    <p className={`mt-[52px] text-[20px] sm:text-[24px] md:text-[26px] text-white font-medium transition-all duration-300`}>
+                      {selectedCohort.name}
+                    </p>
+
+                    {isForum && (
+                      <div
+                        className={`${
+                          isConnectingExperts16to9
+                            ? 'mt-4 sm:mt-5 md:mt-6 max-w-[55%] sm:max-w-[58%] md:max-w-[60%]'
+                            : (isForum && selectedFormat === '16:9')
+                            ? 'mt-10 sm:mt-12 md:mt-14 max-w-[55%] sm:max-w-[58%] md:max-w-[60%]'
+                            : isConnectingExperts
+                            ? 'mt-14 sm:mt-16 md:mt-[4.5rem] max-w-[90%] sm:max-w-[92%] mb-4'
+                            : 'mt-16 sm:mt-20 md:mt-24 max-w-[85%] sm:max-w-[88%] mb-6'
+                        } pointer-events-none transition-all duration-300 ease-in-out text-left`}
+                      >
+                        <h2
+                          style={{ fontSize: `${mainHeadlineRem}rem`, lineHeight: 1.1 }}
+                          className={`text-white font-medium drop-shadow-sm transition-all duration-300 text-left`}
+                        >
+                          {headlineToRender.split('\n').map((line, i) => (
+                            <span key={i} className="block whitespace-nowrap">{line}</span>
+                          ))}
+                        </h2>
+                        {currentSupportingText && (
+                          <p className={`mt-2.5 sm:mt-3 text-white/90 font-medium ${supportingTextSizeClass} drop-shadow-sm transition-all duration-300 text-left`}>
+                            {currentSupportingText}
+                          </p>
+                        )}
+                      </div>
                     )}
                   </div>
-                )}
-              </div>
 
-              {!isForum && (
-                <div className={copyPlacementClass}>
-                  {isCloudNoImage ? (
-                    <div className="text-white font-medium text-left">
-                      <div style={{ fontSize: `${buildHeadlineRem}rem`, lineHeight: 1.05 }}>
-                        We're building
-                      </div>
-                      <div style={{ 
-                        fontSize: `${fasterHeadlineRem}rem`, 
-                        lineHeight: 0.85, 
-                        marginTop: '0px',
-                        paddingLeft: '2.4em'
-                      }}>
-                        faster
-                      </div>
+                  {!isForum && (
+                    <div className={copyPlacementClass}>
+                      <h2
+                        style={{ fontSize: `${mainHeadlineRem}rem`, lineHeight: 1.1 }}
+                        className={`text-white font-medium drop-shadow-sm transition-all duration-300 text-left`}
+                      >
+                        {headlineToRender.split('\n').map((line, i) => (
+                            <span key={i} className="block whitespace-nowrap">{line}</span>
+                        ))}
+                      </h2>
+                      {currentSupportingText && !isCloudNoImage && (
+                        <p className={`mt-2.5 sm:mt-3 text-white/90 font-medium ${supportingTextSizeClass} drop-shadow-sm transition-all duration-300 text-left`}>
+                          {currentSupportingText}
+                        </p>
+                      )}
                     </div>
-                  ) : (
-                    <h2
-                      style={{ fontSize: `${mainHeadlineRem}rem`, lineHeight: 1.1 }}
-                      className={`text-white font-medium drop-shadow-sm transition-all duration-300 text-left`}
-                    >
-                      {headlineToRender.split('\n').map((line, i) => (
-                          <span key={i} className="block whitespace-nowrap">{line}</span>
-                      ))}
-                    </h2>
                   )}
-
-                  {currentSupportingText && !isCloudNoImage && (
-                    <p className={`mt-2.5 sm:mt-3 text-white/90 font-medium ${supportingTextSizeClass} drop-shadow-sm transition-all duration-300 text-left`}>
-                      {currentSupportingText}
-                    </p>
-                  )}
-                </div>
+                </>
               )}
 
               {uploadedImage && !isCloudNoImage && (
@@ -783,7 +808,7 @@ export default function SocialAssetGenerator() {
               )}
 
               <div className={ctaPlacementClass}>
-                <div className="px-6 py-2.5 rounded-full border border-white/40 bg-transparent text-white font-medium text-xs sm:text-sm text-center whitespace-nowrap font-['Google_Sans_Flex',sans-serif]">
+                <div className="px-6 py-2.5 rounded-full border border-white/40 bg-[#121317]/60 text-white font-medium text-xs sm:text-sm text-center whitespace-nowrap font-['Google_Sans_Flex',sans-serif]">
                   Find out more
                 </div>
               </div>
