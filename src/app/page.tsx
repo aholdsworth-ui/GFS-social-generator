@@ -163,6 +163,7 @@ export default function SocialAssetGenerator() {
     : 'text-lg sm:text-xl md:text-2xl';
 
   const isForum16to9 = isForum && selectedFormat === '16:9';
+  const isForum16or9to16 = isForum && (selectedFormat === '16:9' || selectedFormat === '9:16');
 
   const shouldReduceLogoLockup =
     (isCloud || isAccelerator) && (selectedFormat === '16:9' || selectedFormat === '9:16');
