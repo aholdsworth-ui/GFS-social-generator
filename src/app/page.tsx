@@ -196,7 +196,6 @@ export default function SocialAssetGenerator() {
      mediaStyle.transform = 'translate(25%, 25%) scale(1.5)';
   } else if (selectedCohort.id === 'cloud') {
      if (selectedFormat === '9:16') {
-         // Shift left by 8% and scale up to crop exactly per the brief
          mediaStyle.objectPosition = 'left center';
          mediaStyle.transform = 'scale(1.25) translateX(-8%)';
      } else if (selectedFormat === '16:9') {
@@ -313,7 +312,6 @@ export default function SocialAssetGenerator() {
           ctx.drawImage(media, -dw/2, -dh/2, dw, dh);
         } else if (selectedCohort.id === 'cloud') {
           if (selectedFormat === '9:16') {
-              // Scale and shift left precisely matching the CSS offset
               const scaleBg = 1.25;
               const tx = -exportWidth * 0.12; 
               ctx.translate(tx, exportHeight/2);
@@ -375,10 +373,7 @@ export default function SocialAssetGenerator() {
         ctx.fillStyle = vignette;
         ctx.fillRect(0, 0, exportWidth, exportHeight);
 
-        // --- STRICT 9:16 CLOUD NO IMAGE ---
         if (isCloudNoImage && selectedFormat === '9:16') {
-          
-          // 1. Logo & Program: Centered with 2x G Spacing
           const logoH = 50;
           const logoX = exportWidth / 2;
           const logoY = exportHeight * 0.10; 
@@ -395,29 +390,24 @@ export default function SocialAssetGenerator() {
           ctx.fillStyle = '#FFFFFF';
           ctx.font = `500 56px "Google Sans Flex", sans-serif`;
           ctx.textAlign = 'center';
-          ctx.fillText(selectedCohort.name, logoX, programY + 45); // Baseline adjusted
+          ctx.fillText(selectedCohort.name, logoX, programY + 45); 
 
-          // 2. Headline 1: Edge-to-Edge Calculation
           const mainCopyY = exportHeight * 0.42;
-          const h1Text = "We’re building"; // Typographic apostrophe
+          const h1Text = "We’re building"; 
           
           ctx.font = `500 100px "Google Sans Flex", sans-serif`;
           const baseWidth = ctx.measureText(h1Text).width;
-          
-          // Scale size to hit EXACTLY 0px and 1080px with 0 padding
           const edgeToEdgeSize = 100 * (exportWidth / baseWidth);
           
           ctx.font = `500 ${edgeToEdgeSize}px "Google Sans Flex", sans-serif`;
           ctx.textAlign = 'center';
           ctx.fillText(h1Text, exportWidth / 2, mainCopyY);
 
-          // 3. Headline 2: Faster (Flush right, deeply inset left)
           const fasterSize = edgeToEdgeSize * 1.85;
           ctx.font = `500 ${fasterSize}px "Google Sans Flex", sans-serif`;
           ctx.textAlign = 'right';
           ctx.fillText("faster", exportWidth, mainCopyY + fasterSize * 0.82);
 
-          // 4. CTA Pill: Centered, base flush to 1/4 of total canvas (bottom: 25%)
           const pillH = 64;
           const pillW = 260;
           const ctaX = (exportWidth / 2) - (pillW / 2);
@@ -438,7 +428,6 @@ export default function SocialAssetGenerator() {
           ctx.fillText('Find out more', ctaX + pillW / 2, ctaY + pillH / 2);
 
         } else if (isCloudNoImage) {
-          // Fallback logic for 16:9, 1:1, 4:5
           const isLandscape = selectedFormat === '16:9';
           const baseX = exportWidth * (isLandscape ? 0.0625 : 0.074);
           const logoY = exportHeight * (isLandscape ? 0.12 : 0.10);
@@ -493,7 +482,6 @@ export default function SocialAssetGenerator() {
           ctx.fillText('Find out more', ctaX + pillW / 2, ctaY + pillH / 2);
 
         } else {
-          // Standard Export
           const lockupScale = (isForum && selectedFormat === '16:9') ? 0.825 : (isForum && selectedFormat === '9:16') ? 0.94 : shouldReduceLogoLockup ? 0.85 : 1.0;
           const logoH = Math.round(36 * lockupScale);
           const textX = 80;
@@ -711,35 +699,35 @@ export default function SocialAssetGenerator() {
                 <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/35 pointer-events-none" />
               </div>
 
-              {/* --- HTML PREVIEW FOR 9:16 CLOUD NO IMAGE (Math Locked) --- */}
+              {/* --- HTML PREVIEW FOR 9:16 CLOUD NO IMAGE --- */}
               {isCloudNoImage && selectedFormat === '9:16' ? (
-                <div className="absolute inset-0 z-10 pointer-events-none">
+                <div className="absolute inset-0 z-10 pointer-events-none p-4">
                   
                   {/* Centered Logo Lockup & 2x G Spacing */}
                   <div className="absolute top-[10%] left-0 w-full flex flex-col items-center justify-start">
                     <img 
                       src="/assets/gfs-logo-white.png" 
                       alt="Google for Startups Logo"
-                      className="h-[2.6cqh] w-auto block"
+                      className="h-5 sm:h-6 w-auto block"
                     />
-                    <div className="text-white font-medium text-[3.2cqi] mt-[5.2cqh] tracking-normal">
+                    <div className="text-white font-medium text-[20px] sm:text-[24px] mt-[40px] sm:mt-[48px] tracking-normal">
                       {selectedCohort.name}
                     </div>
                   </div>
 
                   {/* Edge-to-Edge Typography Container */}
-                  <div className="absolute top-[42%] left-0 w-full flex flex-col tracking-normal">
-                    <div className="text-white font-medium text-center leading-none w-full tracking-normal" style={{ fontSize: '13.95cqi' }}>
+                  <div className="absolute top-[42%] left-0 w-full flex flex-col tracking-normal px-2">
+                    <div className="text-white font-medium text-center leading-none w-full tracking-normal whitespace-nowrap text-[36px] sm:text-[42px] xl:text-[46px]">
                       We’re building
                     </div>
-                    <div className="text-white font-medium text-right leading-[0.85] mt-1 w-full tracking-normal" style={{ fontSize: '26cqi' }}>
+                    <div className="text-white font-medium text-right leading-[0.85] mt-1 w-full tracking-normal whitespace-nowrap text-[64px] sm:text-[76px] xl:text-[84px] pr-2">
                       faster
                     </div>
                   </div>
 
                   {/* 1/4 Bottom CTA Pill (bottom: 25%) */}
                   <div className="absolute left-1/2 -translate-x-1/2 bottom-[25%] w-auto inline-flex items-center">
-                    <div className="px-6 py-2.5 rounded-full border border-white/40 bg-[#121317]/80 text-white font-medium text-[1.4cqi] sm:text-[1.8cqi] text-center whitespace-nowrap">
+                    <div className="px-6 py-2.5 rounded-full border border-white/40 bg-[#121317]/80 text-white font-medium text-xs sm:text-sm text-center whitespace-nowrap">
                       Find out more
                     </div>
                   </div>
