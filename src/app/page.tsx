@@ -196,9 +196,9 @@ export default function SocialAssetGenerator() {
      mediaStyle.transform = 'translate(25%, 25%) scale(1.5)';
   } else if (selectedCohort.id === 'cloud') {
      if (selectedFormat === '9:16') {
-         // Aggressively scale and shift left to crop the left side
+         // Display approx 1/3 of the rainbow shapes on the left side
          mediaStyle.objectPosition = 'left center';
-         mediaStyle.transform = 'scale(1.35) translateX(-15%)';
+         mediaStyle.transform = 'scale(1.15) translateX(-25%)';
      } else if (selectedFormat === '16:9') {
          mediaStyle.transform = 'scaleX(-1) scale(1.15)';
          mediaStyle.transformOrigin = 'center center';
@@ -283,8 +283,11 @@ export default function SocialAssetGenerator() {
       let logoImg: HTMLImageElement | null = null;
       let userImg: HTMLImageElement | null = null;
       let bgImg: HTMLImageElement | null = null;
+      let pillImg: HTMLImageElement | null = null;
 
       try { logoImg = await loadImg('/assets/gfs-logo-white.png'); } catch (e) { }
+      try { pillImg = await loadImg('/assets/glassy-pill.png'); } catch (e) { }
+      
       if (uploadedImage && !isCloudNoImage) {
         try { userImg = await loadImg(uploadedImage); } catch (e) { }
       }
@@ -313,9 +316,8 @@ export default function SocialAssetGenerator() {
           ctx.drawImage(media, -dw/2, -dh/2, dw, dh);
         } else if (selectedCohort.id === 'cloud') {
           if (selectedFormat === '9:16') {
-              // Scale and shift left precisely matching the CSS offset
-              const scaleBg = 1.35;
-              const tx = -exportWidth * 0.45; 
+              const scaleBg = 1.15;
+              const tx = -exportWidth * 0.25; // Shifts background to show approx 1/3
               ctx.translate(tx, exportHeight/2);
               ctx.scale(scaleBg, scaleBg);
               ctx.drawImage(media, 0, -dh/2, dw, dh);
@@ -379,7 +381,7 @@ export default function SocialAssetGenerator() {
         if (isCloudNoImage && selectedFormat === '9:16') {
           
           // 1. Logo & Program: Centered with 2x G Spacing
-          const logoH = 46;
+          const logoH = 50;
           const logoX = exportWidth / 2;
           const logoY = exportHeight * 0.10; 
           
@@ -393,12 +395,12 @@ export default function SocialAssetGenerator() {
           const programGap = logoH * 2;
           const programY = logoY + logoH + programGap;
           ctx.fillStyle = '#FFFFFF';
-          ctx.font = `500 52px "Google Sans Flex", sans-serif`;
+          ctx.font = `500 56px "Google Sans Flex", sans-serif`;
           ctx.textAlign = 'center';
-          ctx.fillText(selectedCohort.name, logoX, programY + 35); 
+          ctx.fillText(selectedCohort.name, logoX, programY + 45); 
 
-          // 2. Headline 1: True Edge-to-Edge flush with Canvas width
-          const mainCopyY = exportHeight * 0.45;
+          // 2. Headline 1: ZERO padding edge-to-edge
+          const mainCopyY = exportHeight * 0.43;
           const h1Text = "We’re building"; 
           
           ctx.font = `500 100px "Google Sans Flex", sans-serif`;
@@ -409,28 +411,32 @@ export default function SocialAssetGenerator() {
           ctx.textAlign = 'center';
           ctx.fillText(h1Text, exportWidth / 2, mainCopyY);
 
-          // 3. Headline 2: Faster (Flush right, deeply inset left)
-          const fasterSize = edgeToEdgeSize * 1.6;
+          // 3. Headline 2: Faster (Flush right zero padding, scaled to sit under apostrophe)
+          const fasterSize = edgeToEdgeSize * 2.4; // Considerably larger
           ctx.font = `500 ${fasterSize}px "Google Sans Flex", sans-serif`;
           ctx.textAlign = 'right';
-          ctx.fillText("faster", exportWidth, mainCopyY + fasterSize * 0.85);
+          ctx.fillText("faster", exportWidth, mainCopyY + fasterSize * 0.82);
 
-          // 4. CTA Pill: Centered, smaller glassy asset, 1/4 from bottom (25%)
-          const pillH = 50;
-          const pillW = 220;
+          // 4. CTA Pill: Centered, base flush to 1/4 of total canvas (y = exportHeight * 0.75)
+          const pillH = 72;
+          const pillW = 300;
           const ctaX = (exportWidth / 2) - (pillW / 2);
-          const ctaY = exportHeight * 0.75 - pillH;
+          const ctaY = (exportHeight * 0.75) - pillH;
 
-          ctx.beginPath();
-          ctx.roundRect(ctaX, ctaY, pillW, pillH, pillH / 2);
-          ctx.fillStyle = 'rgba(18, 19, 23, 0.4)';
-          ctx.fill();
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-          ctx.lineWidth = 1.5;
-          ctx.stroke();
+          if (pillImg) {
+            ctx.drawImage(pillImg, ctaX, ctaY, pillW, pillH);
+          } else {
+            ctx.beginPath();
+            ctx.roundRect(ctaX, ctaY, pillW, pillH, pillH / 2);
+            ctx.fillStyle = 'rgba(18, 19, 23, 0.4)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+          }
 
           ctx.fillStyle = '#FFFFFF';
-          ctx.font = `500 20px "Google Sans Flex", sans-serif`;
+          ctx.font = `500 28px "Google Sans Flex", sans-serif`; // Slightly larger text
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText('Find out more', ctaX + pillW / 2, ctaY + pillH / 2);
@@ -709,35 +715,37 @@ export default function SocialAssetGenerator() {
                 <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/35 pointer-events-none" />
               </div>
 
-              {/* --- 9:16 HTML PREVIEW --- */}
+              {/* --- ZERO-PADDING HTML PREVIEW FOR 9:16 CLOUD NO IMAGE --- */}
               {isCloudNoImage && selectedFormat === '9:16' ? (
                 <div className="absolute inset-0 z-10 pointer-events-none p-0 flex flex-col">
                   
                   {/* Centered Logo Lockup & 2x G Spacing */}
-                  <div className="absolute top-[10%] w-full flex flex-col items-center justify-start">
+                  <div className="absolute top-[10%] left-0 w-full flex flex-col items-center justify-start">
                     <img 
                       src="/assets/gfs-logo-white.png" 
                       alt="Google for Startups Logo"
-                      className="h-5 sm:h-6 w-auto block"
+                      className="h-[2.6cqh] w-auto block"
                     />
-                    <div className="text-white font-medium text-[20px] sm:text-[22px] mt-[40px] sm:mt-[48px] tracking-normal">
+                    <div className="text-white font-medium text-[3.2cqi] mt-[5.2cqh] tracking-normal">
                       {selectedCohort.name}
                     </div>
                   </div>
 
-                  {/* Edge-to-Edge Typography Container */}
-                  <div className="absolute top-[45%] left-0 w-full flex flex-col tracking-normal">
-                    <div className="text-white font-medium text-center leading-none w-full tracking-normal whitespace-nowrap text-[42px] sm:text-[46px] xl:text-[50px] px-0 mx-0">
+                  {/* True Edge-to-Edge Typography Container with 0px padding */}
+                  <div className="absolute top-[42%] left-0 w-full flex flex-col tracking-normal">
+                    <div className="text-white font-medium text-center leading-none w-full tracking-normal whitespace-nowrap text-[13.6cqi]">
                       We’re building
                     </div>
-                    <div className="text-white font-medium text-right leading-[0.85] mt-2 w-full tracking-normal whitespace-nowrap text-[68px] sm:text-[76px] xl:text-[84px] pr-0">
+                    {/* Flush right, large scale text dropping under apostrophe */}
+                    <div className="text-white font-medium text-right leading-[0.85] mt-1 w-full tracking-normal whitespace-nowrap text-[32cqi] pr-0">
                       faster
                     </div>
                   </div>
 
-                  {/* 1/4 Bottom CTA Pill (bottom: 25%) */}
-                  <div className="absolute left-1/2 -translate-x-1/2 bottom-[25%] w-auto inline-flex items-center">
-                    <div className="px-5 py-2 sm:px-6 sm:py-2 rounded-full border border-white/40 bg-[#121317]/40 backdrop-blur-sm text-white font-medium text-[11px] sm:text-xs text-center whitespace-nowrap">
+                  {/* 1/4 Bottom CTA Pill (bottom: 25%) with loaded asset logic */}
+                  <div className="absolute left-1/2 -translate-x-1/2 bottom-[25%] w-auto inline-flex items-center justify-center min-w-[36cqi] h-[8.5cqi]">
+                    <img src="/assets/glassy-pill.png" className="absolute inset-0 w-full h-full object-fill rounded-full" onError={(e) => e.currentTarget.style.display='none'} />
+                    <div className="relative px-6 py-2.5 rounded-full border border-white/40 bg-[#121317]/40 backdrop-blur-sm text-white font-medium text-[1.8cqi] sm:text-[2cqi] text-center whitespace-nowrap w-full h-full flex items-center justify-center">
                       Find out more
                     </div>
                   </div>
