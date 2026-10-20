@@ -196,9 +196,9 @@ export default function SocialAssetGenerator() {
      mediaStyle.transform = 'translate(25%, 25%) scale(1.5)';
   } else if (selectedCohort.id === 'cloud') {
      if (selectedFormat === '9:16') {
-         // Shifting background left in CSS to reveal only 1/3 of rainbow blocks
-         mediaStyle.objectPosition = '25% center';
-         mediaStyle.transform = 'scale(1.15)';
+         // Shift left by 8% and scale up to crop exactly per the brief
+         mediaStyle.objectPosition = 'left center';
+         mediaStyle.transform = 'scale(1.25) translateX(-8%)';
      } else if (selectedFormat === '16:9') {
          mediaStyle.transform = 'scaleX(-1) scale(1.15)';
          mediaStyle.transformOrigin = 'center center';
@@ -313,10 +313,12 @@ export default function SocialAssetGenerator() {
           ctx.drawImage(media, -dw/2, -dh/2, dw, dh);
         } else if (selectedCohort.id === 'cloud') {
           if (selectedFormat === '9:16') {
-              // Exact shift math: moving it significantly left to show only ~1/3 of rainbow
-              const tx = -exportWidth * 0.35;
-              const ty = (exportHeight - dh) / 2;
-              ctx.drawImage(media, tx, ty, dw, dh);
+              // Scale and shift left precisely matching the CSS offset
+              const scaleBg = 1.25;
+              const tx = -exportWidth * 0.12; 
+              ctx.translate(tx, exportHeight/2);
+              ctx.scale(scaleBg, scaleBg);
+              ctx.drawImage(media, 0, -dh/2, dw, dh);
           } else if (selectedFormat === '16:9') {
               ctx.translate(exportWidth/2, exportHeight/2);
               ctx.scale(-1.15, 1.15); 
@@ -373,12 +375,13 @@ export default function SocialAssetGenerator() {
         ctx.fillStyle = vignette;
         ctx.fillRect(0, 0, exportWidth, exportHeight);
 
-        // --- 9:16 CLOUD NO IMAGE TARGETED EXPORT MATH ---
+        // --- STRICT 9:16 CLOUD NO IMAGE ---
         if (isCloudNoImage && selectedFormat === '9:16') {
-          // 1. Logo & Program: Centered
-          const logoH = 46;
+          
+          // 1. Logo & Program: Centered with 2x G Spacing
+          const logoH = 50;
           const logoX = exportWidth / 2;
-          const logoY = exportHeight * 0.10; // Top 10%
+          const logoY = exportHeight * 0.10; 
           
           if (logoImg) {
             const logoW = logoH * (logoImg.width / logoImg.height);
@@ -387,40 +390,38 @@ export default function SocialAssetGenerator() {
             drawFallbackLogo(ctx, logoX - 50, logoY, 1.0);
           }
 
-          // Strict 2x G padding
           const programGap = logoH * 2;
           const programY = logoY + logoH + programGap;
           ctx.fillStyle = '#FFFFFF';
-          ctx.font = `500 46px "Google Sans Flex", sans-serif`;
+          ctx.font = `500 56px "Google Sans Flex", sans-serif`;
           ctx.textAlign = 'center';
-          ctx.fillText(selectedCohort.name, logoX, programY + 35);
+          ctx.fillText(selectedCohort.name, logoX, programY + 45); // Baseline adjusted
 
-          // 2. Headline 1: Edge-to-Edge calculation
+          // 2. Headline 1: Edge-to-Edge Calculation
           const mainCopyY = exportHeight * 0.42;
           const h1Text = "We’re building"; // Typographic apostrophe
           
-          // Test string at 100px to measure true width
           ctx.font = `500 100px "Google Sans Flex", sans-serif`;
           const baseWidth = ctx.measureText(h1Text).width;
           
-          // Scale size to hit exactly edge-to-edge (minus 4px safety buffer)
-          const edgeToEdgeSize = 100 * ((exportWidth - 8) / baseWidth);
+          // Scale size to hit EXACTLY 0px and 1080px with 0 padding
+          const edgeToEdgeSize = 100 * (exportWidth / baseWidth);
           
           ctx.font = `500 ${edgeToEdgeSize}px "Google Sans Flex", sans-serif`;
           ctx.textAlign = 'center';
           ctx.fillText(h1Text, exportWidth / 2, mainCopyY);
 
-          // 3. Headline 2: Faster (Massive, flush right)
-          const fasterSize = edgeToEdgeSize * 2.2;
+          // 3. Headline 2: Faster (Flush right, deeply inset left)
+          const fasterSize = edgeToEdgeSize * 1.85;
           ctx.font = `500 ${fasterSize}px "Google Sans Flex", sans-serif`;
           ctx.textAlign = 'right';
-          ctx.fillText("faster", exportWidth - 4, mainCopyY + fasterSize * 0.82);
+          ctx.fillText("faster", exportWidth, mainCopyY + fasterSize * 0.82);
 
-          // 4. CTA Pill: Centered, base flush to 1/3 total height
-          const pillH = 56;
-          const pillW = 240;
+          // 4. CTA Pill: Centered, base flush to 1/4 of total canvas (bottom: 25%)
+          const pillH = 64;
+          const pillW = 260;
           const ctaX = (exportWidth / 2) - (pillW / 2);
-          const ctaY = exportHeight - (exportHeight * 0.3333) - pillH;
+          const ctaY = exportHeight - (exportHeight * 0.25) - pillH;
 
           ctx.beginPath();
           ctx.roundRect(ctaX, ctaY, pillW, pillH, pillH / 2);
@@ -437,7 +438,7 @@ export default function SocialAssetGenerator() {
           ctx.fillText('Find out more', ctaX + pillW / 2, ctaY + pillH / 2);
 
         } else if (isCloudNoImage) {
-          // Unchanged fallback logic for 16:9, 1:1, 4:5...
+          // Fallback logic for 16:9, 1:1, 4:5
           const isLandscape = selectedFormat === '16:9';
           const baseX = exportWidth * (isLandscape ? 0.0625 : 0.074);
           const logoY = exportHeight * (isLandscape ? 0.12 : 0.10);
@@ -492,7 +493,7 @@ export default function SocialAssetGenerator() {
           ctx.fillText('Find out more', ctaX + pillW / 2, ctaY + pillH / 2);
 
         } else {
-          // Standard Export for Forum / Accelerator
+          // Standard Export
           const lockupScale = (isForum && selectedFormat === '16:9') ? 0.825 : (isForum && selectedFormat === '9:16') ? 0.94 : shouldReduceLogoLockup ? 0.85 : 1.0;
           const logoH = Math.round(36 * lockupScale);
           const textX = 80;
@@ -710,31 +711,35 @@ export default function SocialAssetGenerator() {
                 <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/35 pointer-events-none" />
               </div>
 
-              {/* --- 9:16 HTML PREVIEW --- */}
+              {/* --- HTML PREVIEW FOR 9:16 CLOUD NO IMAGE (Math Locked) --- */}
               {isCloudNoImage && selectedFormat === '9:16' ? (
-                <div className="absolute inset-0 z-10 pointer-events-none flex flex-col">
+                <div className="absolute inset-0 z-10 pointer-events-none">
                   
-                  {/* Centered Logo & Program */}
-                  <div style={{ position: 'absolute', top: '10%', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <img src="/assets/gfs-logo-white.png" alt="Google for Startups Logo" style={{ height: '24px', width: 'auto' }} />
-                    <div style={{ marginTop: '48px', color: 'white', fontWeight: 500, fontSize: '24px' }}>
+                  {/* Centered Logo Lockup & 2x G Spacing */}
+                  <div className="absolute top-[10%] left-0 w-full flex flex-col items-center justify-start">
+                    <img 
+                      src="/assets/gfs-logo-white.png" 
+                      alt="Google for Startups Logo"
+                      className="h-[2.6cqh] w-auto block"
+                    />
+                    <div className="text-white font-medium text-[3.2cqi] mt-[5.2cqh] tracking-normal">
                       {selectedCohort.name}
                     </div>
                   </div>
 
-                  {/* Edge-to-Edge Typography with Safe Hardcoded Inline px */}
-                  <div style={{ position: 'absolute', top: '42%', width: '100%', display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ width: '100%', textAlign: 'center', color: 'white', fontWeight: 500, fontSize: '48px', lineHeight: 1, letterSpacing: '0px' }}>
+                  {/* Edge-to-Edge Typography Container */}
+                  <div className="absolute top-[42%] left-0 w-full flex flex-col tracking-normal">
+                    <div className="text-white font-medium text-center leading-none w-full tracking-normal" style={{ fontSize: '13.95cqi' }}>
                       We’re building
                     </div>
-                    <div style={{ width: '100%', textAlign: 'right', color: 'white', fontWeight: 500, fontSize: '106px', lineHeight: 0.85, paddingRight: '4px', letterSpacing: '0px' }}>
+                    <div className="text-white font-medium text-right leading-[0.85] mt-1 w-full tracking-normal" style={{ fontSize: '26cqi' }}>
                       faster
                     </div>
                   </div>
 
-                  {/* 1/3 Bottom CTA Pill */}
-                  <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: '33.33%' }}>
-                    <div style={{ padding: '8px 24px', borderRadius: '999px', border: '1.5px solid rgba(255,255,255,0.4)', backgroundColor: 'rgba(18,19,23,0.8)', color: 'white', fontSize: '14px', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                  {/* 1/4 Bottom CTA Pill (bottom: 25%) */}
+                  <div className="absolute left-1/2 -translate-x-1/2 bottom-[25%] w-auto inline-flex items-center">
+                    <div className="px-6 py-2.5 rounded-full border border-white/40 bg-[#121317]/80 text-white font-medium text-[1.4cqi] sm:text-[1.8cqi] text-center whitespace-nowrap">
                       Find out more
                     </div>
                   </div>
