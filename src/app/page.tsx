@@ -90,7 +90,6 @@ export default function SocialAssetGenerator() {
   const isForum = selectedCohort.id === 'forum';
 
   const isCloudNoImage = isCloud && (normalizedHeadline.includes('(No image)') || normalizedHeadline.includes('(No Logo)'));
-  const isCenteredLayout = isCloudNoImage && selectedFormat !== '16:9';
   const headlineLen = currentHeadline.length;
 
   const baseSizeRem = selectedFormat === '16:9' ? 2.25 : 3.0;
@@ -197,9 +196,9 @@ export default function SocialAssetGenerator() {
      mediaStyle.transform = 'translate(25%, 25%) scale(1.5)';
   } else if (selectedCohort.id === 'cloud') {
      if (selectedFormat === '9:16') {
-         // Pull background left so only ~1/3 of the rainbow is visible
+         // Shifting background left in CSS to reveal only 1/3 of rainbow blocks
          mediaStyle.objectPosition = '25% center';
-         mediaStyle.transform = 'scale(1.0)';
+         mediaStyle.transform = 'scale(1.15)';
      } else if (selectedFormat === '16:9') {
          mediaStyle.transform = 'scaleX(-1) scale(1.15)';
          mediaStyle.transformOrigin = 'center center';
@@ -314,8 +313,8 @@ export default function SocialAssetGenerator() {
           ctx.drawImage(media, -dw/2, -dh/2, dw, dh);
         } else if (selectedCohort.id === 'cloud') {
           if (selectedFormat === '9:16') {
-              // Shift video left to hide exactly 2/3 of the rainbow
-              const tx = -exportWidth * 0.70;
+              // Exact shift math: moving it significantly left to show only ~1/3 of rainbow
+              const tx = -exportWidth * 0.35;
               const ty = (exportHeight - dh) / 2;
               ctx.drawImage(media, tx, ty, dw, dh);
           } else if (selectedFormat === '16:9') {
@@ -374,12 +373,12 @@ export default function SocialAssetGenerator() {
         ctx.fillStyle = vignette;
         ctx.fillRect(0, 0, exportWidth, exportHeight);
 
-        // --- 9:16 CLOUD NO IMAGE: QUARANTINED MATH ---
+        // --- 9:16 CLOUD NO IMAGE TARGETED EXPORT MATH ---
         if (isCloudNoImage && selectedFormat === '9:16') {
           // 1. Logo & Program: Centered
           const logoH = 46;
           const logoX = exportWidth / 2;
-          const logoY = exportHeight * 0.10;
+          const logoY = exportHeight * 0.10; // Top 10%
           
           if (logoImg) {
             const logoW = logoH * (logoImg.width / logoImg.height);
@@ -392,32 +391,36 @@ export default function SocialAssetGenerator() {
           const programGap = logoH * 2;
           const programY = logoY + logoH + programGap;
           ctx.fillStyle = '#FFFFFF';
-          ctx.font = `500 48px "Google Sans Flex", sans-serif`;
+          ctx.font = `500 46px "Google Sans Flex", sans-serif`;
           ctx.textAlign = 'center';
           ctx.fillText(selectedCohort.name, logoX, programY + 35);
 
-          // 2. Headline 1: Edge-to-Edge
+          // 2. Headline 1: Edge-to-Edge calculation
           const mainCopyY = exportHeight * 0.42;
           const h1Text = "We’re building"; // Typographic apostrophe
+          
+          // Test string at 100px to measure true width
           ctx.font = `500 100px "Google Sans Flex", sans-serif`;
           const baseWidth = ctx.measureText(h1Text).width;
-          const edgeToEdgeSize = 100 * (exportWidth / baseWidth);
+          
+          // Scale size to hit exactly edge-to-edge (minus 4px safety buffer)
+          const edgeToEdgeSize = 100 * ((exportWidth - 8) / baseWidth);
           
           ctx.font = `500 ${edgeToEdgeSize}px "Google Sans Flex", sans-serif`;
           ctx.textAlign = 'center';
           ctx.fillText(h1Text, exportWidth / 2, mainCopyY);
 
-          // 3. Headline 2: Considerably larger, flush right
-          const fasterSize = edgeToEdgeSize * 2.1;
+          // 3. Headline 2: Faster (Massive, flush right)
+          const fasterSize = edgeToEdgeSize * 2.2;
           ctx.font = `500 ${fasterSize}px "Google Sans Flex", sans-serif`;
           ctx.textAlign = 'right';
-          ctx.fillText("faster", exportWidth, mainCopyY + fasterSize * 0.85);
+          ctx.fillText("faster", exportWidth - 4, mainCopyY + fasterSize * 0.82);
 
-          // 4. CTA Pill: Centered, 1/3 from bottom
-          const pillH = 60;
-          const pillW = 250;
+          // 4. CTA Pill: Centered, base flush to 1/3 total height
+          const pillH = 56;
+          const pillW = 240;
           const ctaX = (exportWidth / 2) - (pillW / 2);
-          const ctaY = (exportHeight * 0.666) - pillH;
+          const ctaY = exportHeight - (exportHeight * 0.3333) - pillH;
 
           ctx.beginPath();
           ctx.roundRect(ctaX, ctaY, pillW, pillH, pillH / 2);
@@ -434,7 +437,7 @@ export default function SocialAssetGenerator() {
           ctx.fillText('Find out more', ctaX + pillW / 2, ctaY + pillH / 2);
 
         } else if (isCloudNoImage) {
-          // Fallback logic for other Cloud Formats
+          // Unchanged fallback logic for 16:9, 1:1, 4:5...
           const isLandscape = selectedFormat === '16:9';
           const baseX = exportWidth * (isLandscape ? 0.0625 : 0.074);
           const logoY = exportHeight * (isLandscape ? 0.12 : 0.10);
@@ -489,7 +492,7 @@ export default function SocialAssetGenerator() {
           ctx.fillText('Find out more', ctaX + pillW / 2, ctaY + pillH / 2);
 
         } else {
-          // Standard Export for Forum and Accelerator
+          // Standard Export for Forum / Accelerator
           const lockupScale = (isForum && selectedFormat === '16:9') ? 0.825 : (isForum && selectedFormat === '9:16') ? 0.94 : shouldReduceLogoLockup ? 0.85 : 1.0;
           const logoH = Math.round(36 * lockupScale);
           const textX = 80;
@@ -565,8 +568,6 @@ export default function SocialAssetGenerator() {
           ctx.save();
           ctx.beginPath();
           ctx.roundRect(ctaX, ctaY, pillW, pillH, pillH / 2);
-          ctx.fillStyle = 'rgba(18, 19, 23, 0.8)';
-          ctx.fill();
           ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
           ctx.lineWidth = 1.5;
           ctx.stroke();
@@ -709,35 +710,31 @@ export default function SocialAssetGenerator() {
                 <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/35 pointer-events-none" />
               </div>
 
-              {/* --- 9:16 HTML OVERLAY --- */}
+              {/* --- 9:16 HTML PREVIEW --- */}
               {isCloudNoImage && selectedFormat === '9:16' ? (
-                <div className="absolute inset-0 z-10 pointer-events-none">
+                <div className="absolute inset-0 z-10 pointer-events-none flex flex-col">
                   
-                  {/* Centered Logo Lockup & 2x G Spacing */}
-                  <div className="absolute top-[10%] left-1/2 -translate-x-1/2 flex flex-col items-center w-full">
-                    <img 
-                      src="/assets/gfs-logo-white.png" 
-                      alt="Google for Startups Logo"
-                      className="h-[5.5cqi] w-auto"
-                    />
-                    <div className="text-white font-medium text-[4.8cqi] mt-[11cqi]">
+                  {/* Centered Logo & Program */}
+                  <div style={{ position: 'absolute', top: '10%', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <img src="/assets/gfs-logo-white.png" alt="Google for Startups Logo" style={{ height: '24px', width: 'auto' }} />
+                    <div style={{ marginTop: '48px', color: 'white', fontWeight: 500, fontSize: '24px' }}>
                       {selectedCohort.name}
                     </div>
                   </div>
 
-                  {/* Edge-to-Edge Math Typography */}
-                  <div className="absolute top-[42%] w-full flex flex-col tracking-normal">
-                    <div className="text-white font-medium text-center leading-none w-full" style={{ fontSize: '15.6cqi' }}>
+                  {/* Edge-to-Edge Typography with Safe Hardcoded Inline px */}
+                  <div style={{ position: 'absolute', top: '42%', width: '100%', display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ width: '100%', textAlign: 'center', color: 'white', fontWeight: 500, fontSize: '48px', lineHeight: 1, letterSpacing: '0px' }}>
                       We’re building
                     </div>
-                    <div className="text-white font-medium text-right leading-[0.85] mt-2 w-full" style={{ fontSize: '33cqi' }}>
+                    <div style={{ width: '100%', textAlign: 'right', color: 'white', fontWeight: 500, fontSize: '106px', lineHeight: 0.85, paddingRight: '4px', letterSpacing: '0px' }}>
                       faster
                     </div>
                   </div>
 
                   {/* 1/3 Bottom CTA Pill */}
-                  <div className="absolute left-1/2 -translate-x-1/2 bottom-[33.33%] w-auto inline-flex items-center">
-                    <div className="px-6 py-2.5 rounded-full border border-white/40 bg-[#121317]/80 text-white font-medium text-xs sm:text-sm text-center">
+                  <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: '33.33%' }}>
+                    <div style={{ padding: '8px 24px', borderRadius: '999px', border: '1.5px solid rgba(255,255,255,0.4)', backgroundColor: 'rgba(18,19,23,0.8)', color: 'white', fontSize: '14px', fontWeight: 500, whiteSpace: 'nowrap' }}>
                       Find out more
                     </div>
                   </div>
@@ -825,7 +822,7 @@ export default function SocialAssetGenerator() {
                     <div className={copyPlacementClass}>
                       <h2
                         style={{ fontSize: `${mainHeadlineRem}rem`, lineHeight: 1.1 }}
-                        className={`text-white font-medium drop-shadow-sm transition-all duration-300 text-left`}
+                        className={`text-white font-medium drop-shadow-sm transition-all duration-300 text-left tracking-normal`}
                       >
                         {headlineToRender.split('\n').map((line, i) => (
                             <span key={i} className="block whitespace-nowrap">{line}</span>
