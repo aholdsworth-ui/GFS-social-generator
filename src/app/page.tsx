@@ -90,29 +90,44 @@ export default function SocialAssetGenerator() {
   const isForum = selectedCohort.id === 'forum';
 
   const isCloudNoImage = isCloud && (normalizedHeadline.includes('(No image)') || normalizedHeadline.includes('(No Logo)'));
-  const isCenteredLayout = isCloudNoImage && selectedFormat !== '16:9';
   const headlineLen = currentHeadline.length;
 
   const baseSizeRem = selectedFormat === '16:9' ? 2.25 : 3.0;
   let headlineScale = 1.0;
 
   if (selectedFormat === '16:9') {
-    if (isForum) headlineScale = normalizedHeadline.includes('Connecting with experts') ? 1.08 : 1.2;
-    else if (isCloud) headlineScale = isCloudNoImage ? 1.4 : 1.44;
-    else if (isAccelerator) headlineScale = headlineLen <= 13 ? 1.575 : 0.96;
+    if (isForum) {
+      headlineScale = normalizedHeadline.includes('Connecting with experts') ? 1.08 : 1.2;
+    } else if (isCloud) {
+      headlineScale = isCloudNoImage ? 1.4 : 1.44;
+    } else if (isAccelerator) {
+      headlineScale = headlineLen <= 13 ? 1.575 : 0.96;
+    }
   } else if (selectedFormat === '9:16') {
-    if (isForum) headlineScale = 0.9;
-    else if (isCloud) headlineScale = isCloudNoImage ? 0.9 : 1.2;
-    else if (isAccelerator) headlineScale = headlineLen <= 13 ? 0.8 : 0.64;
+    if (isForum) {
+      headlineScale = 0.9;
+    } else if (isCloud) {
+      headlineScale = isCloudNoImage ? 0.9 : 1.2;
+    } else if (isAccelerator) {
+      headlineScale = headlineLen <= 13 ? 0.8 : 0.64;
+    }
   } else if (selectedFormat === '1:1') {
-    if (isCloud) headlineScale = isCloudNoImage ? 1.05 : 1.2;
-    else if (isAccelerator) headlineScale = headlineLen <= 13 ? 1.0 : 0.704;
+    if (isCloud) {
+      headlineScale = isCloudNoImage ? 1.05 : 1.2;
+    } else if (isAccelerator) {
+      headlineScale = headlineLen <= 13 ? 1.0 : 0.704;
+    }
   } else {
-    if (isCloud) headlineScale = isCloudNoImage ? 1.05 : 1.2;
-    else if (isAccelerator) headlineScale = headlineLen <= 13 ? 1.0 : 0.8;
+    if (isCloud) {
+      headlineScale = isCloudNoImage ? 1.05 : 1.2;
+    } else if (isAccelerator) {
+      headlineScale = headlineLen <= 13 ? 1.0 : 0.8;
+    }
   }
 
   const headlineClass = `text-[calc(var(--base-size)*${headlineScale})]`;
+  const mainHeadlineRem = baseSizeRem * headlineScale;
+  const fasterHeadlineRem = mainHeadlineRem * 2.3;
 
   const isConnectingExperts = isForum && normalizedHeadline.includes('Connecting with experts');
   const isConnectingExperts9to16 = isConnectingExperts && selectedFormat === '9:16';
@@ -144,72 +159,112 @@ export default function SocialAssetGenerator() {
     : 'text-lg sm:text-xl md:text-2xl';
 
   const isForum16to9 = isForum && selectedFormat === '16:9';
+  const isForum16or9to16 = isForum && (selectedFormat === '16:9' || selectedFormat === '9:16');
   const shouldReduceLogoLockup = (isCloud || isAccelerator) && (selectedFormat === '16:9' || selectedFormat === '9:16');
 
   let uploadScale = 1.0;
   if (selectedFormat === '16:9') {
-    if (isForum16to9) uploadScale = 1.0;
-    else if (isCloud) uploadScale = 0.85; 
-    else if (isAccelerator && headlineLen <= 13) uploadScale = 0.90;
+    if (isForum16to9) {
+      uploadScale = 1.0;
+    } else if (isCloud) {
+      uploadScale = 0.85; 
+    } else if (isAccelerator && headlineLen <= 13) {
+      uploadScale = 0.90;
+    }
   } else if (selectedFormat === '9:16') {
-    if (isForum || isCloud || isAccelerator) uploadScale = 0.75;
+    if (isForum || isCloud || isAccelerator) {
+      uploadScale = 0.75;
+    }
   }
 
-  const uploadScaleClass = uploadScale === 0.75 ? 'scale-75 origin-bottom-right' : uploadScale === 0.85 ? 'scale-[0.85] origin-bottom-right' : uploadScale === 0.90 ? 'scale-90 origin-bottom-right' : 'scale-100 origin-bottom-right';
+  const uploadScaleClass = uploadScale === 0.75 
+    ? 'scale-75 origin-bottom-right' 
+    : uploadScale === 0.85 
+    ? 'scale-[0.85] origin-bottom-right' 
+    : uploadScale === 0.90 
+    ? 'scale-90 origin-bottom-right' 
+    : 'scale-100 origin-bottom-right';
 
   let uploadPanelAspectClass = 'aspect-square';
-  if (isForum16to9 || uploadType === 'photo') uploadPanelAspectClass = 'aspect-[4/5]';
-  if (selectedFormat === '1:1') uploadPanelAspectClass = 'aspect-square';
-  if (selectedFormat === '16:9' && uploadType !== 'photo') uploadPanelAspectClass = 'aspect-video';
+  if (isForum16to9 || uploadType === 'photo') {
+    uploadPanelAspectClass = 'aspect-[4/5]';
+  }
+  if (selectedFormat === '1:1') {
+    uploadPanelAspectClass = 'aspect-square';
+  }
+  if (selectedFormat === '16:9' && uploadType !== 'photo') {
+    uploadPanelAspectClass = 'aspect-video';
+  }
 
   let uploadPanelPlacementClass = '';
-  if (isForum16to9) uploadPanelPlacementClass = 'bottom-3 right-3 sm:bottom-4 sm:right-4 h-[75%] w-auto max-w-none';
-  else if (selectedFormat === '16:9') uploadPanelPlacementClass = 'bottom-3 right-3 sm:bottom-4 sm:right-4 w-44 sm:w-56 md:w-68';
-  else if (selectedFormat === '9:16') uploadPanelPlacementClass = 'bottom-16 right-3 sm:bottom-20 sm:right-4 md:bottom-24 md:right-5 w-40 sm:w-48 md:w-56';
-  else uploadPanelPlacementClass = 'bottom-2 right-2 sm:bottom-3 sm:right-3 w-32 sm:w-36 md:w-44';
-
-  let ctaPlacementClass = '';
-  if (isCenteredLayout) {
-    ctaPlacementClass = 'absolute z-10 w-auto inline-flex items-center pointer-events-none transition-all duration-300 ease-in-out left-1/2 -translate-x-1/2 ';
-    if (selectedFormat === '9:16') ctaPlacementClass += 'bottom-16 sm:bottom-20 md:bottom-24 scale-90';
-    else ctaPlacementClass += 'bottom-7 sm:bottom-8 md:bottom-10 scale-100';
-  } else if (isCloudNoImage && selectedFormat === '16:9') {
-    ctaPlacementClass = 'absolute z-10 w-auto inline-flex items-center pointer-events-none transition-all duration-300 ease-in-out right-10 sm:right-12 md:right-14 bottom-8 sm:bottom-10 scale-[0.80] origin-bottom-right';
+  if (isForum16to9) {
+    uploadPanelPlacementClass = 'bottom-3 right-3 sm:bottom-4 sm:right-4 h-[75%] w-auto max-w-none';
+  } else if (selectedFormat === '16:9') {
+    uploadPanelPlacementClass = 'bottom-3 right-3 sm:bottom-4 sm:right-4 w-44 sm:w-56 md:w-68';
+  } else if (selectedFormat === '9:16') {
+    uploadPanelPlacementClass = 'bottom-16 right-3 sm:bottom-20 sm:right-4 md:bottom-24 md:right-5 w-40 sm:w-48 md:w-56';
   } else {
-    ctaPlacementClass = 'absolute z-10 w-auto inline-flex items-center pointer-events-none transition-all duration-300 ease-in-out left-7 sm:left-9 md:left-10 ';
-    if (selectedFormat === '16:9') ctaPlacementClass += 'bottom-3.5 sm:bottom-4 md:bottom-5 scale-[0.70] origin-bottom-left';
-    else if (selectedFormat === '9:16') ctaPlacementClass += 'bottom-16 sm:bottom-20 md:bottom-24 scale-[0.70] origin-bottom-left';
-    else ctaPlacementClass += 'bottom-7 sm:bottom-8 md:bottom-9 scale-100 origin-bottom-left';
+    uploadPanelPlacementClass = 'bottom-2 right-2 sm:bottom-3 sm:right-3 w-32 sm:w-36 md:w-44';
+  }
+
+  let ctaPlacementClass = 'absolute z-10 w-auto inline-flex items-center pointer-events-none transition-all duration-300 ease-in-out ';
+  if (isCloudNoImage && selectedFormat === '16:9') {
+    ctaPlacementClass += 'right-10 sm:right-12 md:right-14 bottom-8 sm:bottom-10 scale-[0.80] origin-bottom-right';
+  } else if (isCloudNoImage) {
+    ctaPlacementClass += 'left-8 sm:left-10 md:left-12 bottom-12 sm:bottom-16 md:bottom-20 scale-90 origin-bottom-left';
+  } else {
+    ctaPlacementClass += 'left-7 sm:left-9 md:left-10 ';
+    if (selectedFormat === '16:9') {
+      ctaPlacementClass += 'bottom-3.5 sm:bottom-4 md:bottom-5 scale-[0.70] origin-bottom-left';
+    } else if (selectedFormat === '9:16') {
+      ctaPlacementClass += 'bottom-16 sm:bottom-20 md:bottom-24 scale-[0.70] origin-bottom-left';
+    } else {
+      ctaPlacementClass += 'bottom-7 sm:bottom-8 md:bottom-9 scale-100 origin-bottom-left';
+    }
   }
 
   let copyPlacementClass = 'absolute z-10 pointer-events-none transition-all duration-300 ease-in-out text-left ';
   if (isCloudNoImage) {
     copyPlacementClass += 'left-8 sm:left-10 md:left-12 ';
-    if (selectedFormat === '16:9') copyPlacementClass += 'top-[34%] max-w-[85%]';
-    else if (selectedFormat === '9:16') copyPlacementClass += 'top-[36%] right-8 sm:right-10 md:right-12';
-    else copyPlacementClass += 'top-[36%] right-8 sm:right-10 md:right-12';
+    if (selectedFormat === '16:9') {
+      copyPlacementClass += 'top-[34%] max-w-[85%]';
+    } else {
+      copyPlacementClass += 'top-[36%] right-8 sm:right-10 md:right-12';
+    }
   } else {
     copyPlacementClass += 'left-7 sm:left-9 md:left-10 ';
-    if (selectedFormat === '16:9') copyPlacementClass += 'top-[28%] sm:top-[30%] max-w-[62%] sm:max-w-[65%]';
-    else if (selectedFormat === '9:16') copyPlacementClass += 'top-[22%] sm:top-[24%] max-w-[86%] sm:max-w-[88%]';
-    else copyPlacementClass += 'top-[33%] sm:top-[35%] max-w-[86%] sm:max-w-[88%]';
+    if (selectedFormat === '16:9') {
+      copyPlacementClass += 'top-[28%] sm:top-[30%] max-w-[62%] sm:max-w-[65%]';
+    } else if (selectedFormat === '9:16') {
+      copyPlacementClass += 'top-[22%] sm:top-[24%] max-w-[86%] sm:max-w-[88%]';
+    } else {
+      copyPlacementClass += 'top-[33%] sm:top-[35%] max-w-[86%] sm:max-w-[88%]';
+    }
   }
 
-  let logoLockupPlacementClass = 'absolute z-10 flex flex-col pointer-events-none transition-all duration-300 ease-in-out ';
-  if (isCenteredLayout) logoLockupPlacementClass += 'left-1/2 -translate-x-1/2 items-center text-center ';
-  else if (isCloudNoImage) logoLockupPlacementClass += 'left-8 sm:left-10 md:left-12 items-start text-left ';
-  else logoLockupPlacementClass += 'left-7 sm:left-9 md:left-10 items-start text-left ';
+  let logoLockupPlacementClass = 'absolute z-10 flex flex-col pointer-events-none transition-all duration-300 ease-in-out items-start text-left ';
+  if (isCloudNoImage) {
+    logoLockupPlacementClass += 'left-8 sm:left-10 md:left-12 ';
+  } else {
+    logoLockupPlacementClass += 'left-7 sm:left-9 md:left-10 ';
+  }
 
-  if (selectedFormat === '16:9') logoLockupPlacementClass += (isForum ? 'top-9 sm:top-11 ' : 'top-8 sm:top-10 ');
-  else if (selectedFormat === '9:16') logoLockupPlacementClass += 'top-12 sm:top-14 ';
-  else logoLockupPlacementClass += 'top-10 sm:top-12 ';
+  if (selectedFormat === '16:9') {
+    logoLockupPlacementClass += (isForum ? 'top-9 sm:top-11 ' : 'top-8 sm:top-10 ');
+  } else if (selectedFormat === '9:16') {
+    logoLockupPlacementClass += 'top-12 sm:top-14 ';
+  } else {
+    logoLockupPlacementClass += 'top-10 sm:top-12 ';
+  }
 
-  if (isForum && selectedFormat === '9:16') logoLockupPlacementClass += '-translate-y-3 sm:-translate-y-4 ';
+  if (isForum && selectedFormat === '9:16') {
+    logoLockupPlacementClass += '-translate-y-3 sm:-translate-y-4 ';
+  }
   
   if (shouldReduceLogoLockup) {
-      logoLockupPlacementClass += isCenteredLayout ? ' scale-[0.85] origin-top' : ' scale-[0.85] origin-top-left';
+      logoLockupPlacementClass += ' scale-[0.85] origin-top-left';
   } else {
-      logoLockupPlacementClass += isCenteredLayout ? ' scale-100 origin-top' : ' scale-100 origin-top-left';
+      logoLockupPlacementClass += ' scale-100 origin-top-left';
   }
 
   const currentAssetSrc = selectedCohort.assets[assetType as keyof typeof selectedCohort.assets];
@@ -237,7 +292,9 @@ export default function SocialAssetGenerator() {
   const removeUpload = () => {
     setUploadedImage(null);
     setUploadedFileName('');
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const setSampleLogo = (type: 'logo' | 'founder') => {
@@ -325,9 +382,16 @@ export default function SocialAssetGenerator() {
         const mAspect = mw / mh;
         const cAspect = exportWidth / exportHeight;
 
-        let dw = exportWidth; let dh = exportHeight;
-        if (mAspect > cAspect) { dh = exportHeight; dw = exportHeight * mAspect; } 
-        else { dw = exportWidth; dh = exportWidth / mAspect; }
+        let dw = exportWidth; 
+        let dh = exportHeight;
+        
+        if (mAspect > cAspect) { 
+          dh = exportHeight; 
+          dw = exportHeight * mAspect; 
+        } else { 
+          dw = exportWidth; 
+          dh = exportWidth / mAspect; 
+        }
 
         ctx.save();
         if (selectedCohort.id === 'forum') {
@@ -342,7 +406,7 @@ export default function SocialAssetGenerator() {
           const scale = 1.2;
           const scaledW = dw * scale;
           const scaledH = dh * scale;
-          const tx = exportWidth - scaledW;
+          const tx = exportWidth - scaledW; // Right-anchor math
           const ty = (exportHeight - scaledH) / 2;
           ctx.drawImage(media, tx, ty, scaledW, scaledH);
         } else {
@@ -394,26 +458,24 @@ export default function SocialAssetGenerator() {
 
         const lockupScale = (isForum && selectedFormat === '16:9') ? 0.825 : (isForum && selectedFormat === '9:16') ? 0.94 : shouldReduceLogoLockup ? 0.85 : 1.0;
         const logoH = Math.round(36 * lockupScale);
-        const textX = 80;
-        const logoX = isCenteredLayout ? (exportWidth / 2) : textX;
+        const textX = isCloudNoImage ? 96 : 80;
         const logoY = (isForum && selectedFormat === '16:9') ? 74 : (isForum && selectedFormat === '9:16') ? 48 : (isCloudNoImage && selectedFormat === '9:16') ? 110 : 80;
-        
-        const actualLogoX = isCenteredLayout ? logoX - (Math.round(68 * lockupScale) / 2) : logoX;
         
         if (logoImg) {
           const logoAspect = logoImg.width / logoImg.height;
           const logoW = logoH * logoAspect;
-          ctx.drawImage(logoImg, isCenteredLayout ? logoX - (logoW/2) : logoX, logoY, logoW, logoH);
+          ctx.drawImage(logoImg, textX, logoY, logoW, logoH);
         } else {
-          drawFallbackLogo(ctx, actualLogoX, logoY, lockupScale);
+          drawFallbackLogo(ctx, textX, logoY, lockupScale);
         }
 
+        // Apply strict 2x G padding mathematically
         const programGap = (isForum && selectedFormat === '16:9') ? 26 : isForum ? 30 : Math.round(logoH * 2);
         const programY = logoY + logoH + programGap;
         ctx.fillStyle = '#FFFFFF';
         ctx.font = `500 ${Math.round(48 * lockupScale)}px "Google Sans Flex", sans-serif`;
-        ctx.textAlign = isCenteredLayout ? 'center' : 'left';
-        ctx.fillText(selectedCohort.name, logoX, programY);
+        ctx.textAlign = 'left';
+        ctx.fillText(selectedCohort.name, textX, programY);
 
         let mainCopyY: number;
         if (isForum) {
@@ -437,13 +499,21 @@ export default function SocialAssetGenerator() {
           let fasterOffsetX = textX;
 
           if (selectedFormat === '16:9') {
-             buildSize = 120; fasterSize = 280; fasterOffsetX = textX + 350;
+             buildSize = 120; 
+             fasterSize = 280; 
+             fasterOffsetX = textX + 350;
           } else if (selectedFormat === '9:16') {
-             buildSize = 140; fasterSize = 350; fasterOffsetX = textX;
+             buildSize = 140; 
+             fasterSize = 350; 
+             fasterOffsetX = textX;
           } else if (selectedFormat === '4:5') {
-             buildSize = 130; fasterSize = 310; fasterOffsetX = textX;
+             buildSize = 130; 
+             fasterSize = 310; 
+             fasterOffsetX = textX;
           } else if (selectedFormat === '1:1') {
-             buildSize = 120; fasterSize = 290; fasterOffsetX = textX;
+             buildSize = 120; 
+             fasterSize = 290; 
+             fasterOffsetX = textX;
           }
 
           ctx.font = `500 ${buildSize}px "Google Sans Flex", sans-serif`;
@@ -487,27 +557,40 @@ export default function SocialAssetGenerator() {
         }
 
         if (userImg && !isCloudNoImage) {
-          let userW = 351; let userH = 439;
-          let userX = exportWidth - userW - 28; let userY = exportHeight - userH - 28;
+          let userW = 351; 
+          let userH = 439;
+          let userX = exportWidth - userW - 28; 
+          let userY = exportHeight - userH - 28;
 
           if (isForum16to9) {
-            userH = Math.round(exportHeight * 0.75); userW = Math.round(userH * 4 / 5);
-            userX = exportWidth - userW - 32; userY = exportHeight - userH - 32;
+            userH = Math.round(exportHeight * 0.75); 
+            userW = Math.round(userH * 4 / 5);
+            userX = exportWidth - userW - 32; 
+            userY = exportHeight - userH - 32;
           } else if (selectedFormat === '1:1') {
-            userW = 351; userH = 351;
-            userX = exportWidth - userW - 28; userY = exportHeight - userH - 28;
+            userW = 351; 
+            userH = 351;
+            userX = exportWidth - userW - 28; 
+            userY = exportHeight - userH - 28;
           } else if (selectedFormat === '16:9') {
-            userW = 460; userH = Math.round(userW * 9 / 16); 
-            userX = exportWidth - userW - 32; userY = exportHeight - userH - 32;
+            userW = 460; 
+            userH = Math.round(userW * 9 / 16); 
+            userX = exportWidth - userW - 32; 
+            userY = exportHeight - userH - 32;
           } else if (selectedFormat === '9:16') {
-            userW = Math.round(351 * 1.25); userH = uploadType === 'logo' ? userW : Math.round(userW * 5 / 4);
-            userX = exportWidth - userW - 32; userY = exportHeight - userH - 180; 
+            userW = Math.round(351 * 1.25); 
+            userH = uploadType === 'logo' ? userW : Math.round(userW * 5 / 4);
+            userX = exportWidth - userW - 32; 
+            userY = exportHeight - userH - 180; 
           }
 
           if (uploadScale !== 1.0) {
-            const origW = userW; const origH = userH;
-            userW = Math.round(userW * uploadScale); userH = Math.round(userH * uploadScale);
-            userX += (origW - userW); userY += (origH - userH); 
+            const origW = userW; 
+            const origH = userH;
+            userW = Math.round(userW * uploadScale); 
+            userH = Math.round(userH * uploadScale);
+            userX += (origW - userW); 
+            userY += (origH - userH); 
           }
 
           ctx.save();
@@ -545,8 +628,6 @@ export default function SocialAssetGenerator() {
         if (isCloudNoImage && selectedFormat === '16:9') {
           ctaX = exportWidth - pillW - 120;
           ctaY = exportHeight - pillH - 80;
-        } else if (isCenteredLayout) {
-          ctaX = (exportWidth / 2) - (pillW / 2);
         }
 
         ctx.save();
@@ -727,7 +808,7 @@ export default function SocialAssetGenerator() {
                     } pointer-events-none transition-all duration-300 ease-in-out text-left`}
                   >
                     <h2
-                      style={{ fontSize: `${baseSizeRem * headlineScale}rem`, lineHeight: 1.1 }}
+                      style={{ fontSize: `${mainHeadlineRem}rem`, lineHeight: 1.1 }}
                       className={`text-white font-medium drop-shadow-sm transition-all duration-300 text-left`}
                     >
                       {headlineToRender.split('\n').map((line, i) => (
@@ -766,7 +847,7 @@ export default function SocialAssetGenerator() {
                     </div>
                   ) : (
                     <h2
-                      style={{ fontSize: `${baseSizeRem * headlineScale}rem`, lineHeight: 1.1 }}
+                      style={{ fontSize: `${mainHeadlineRem}rem`, lineHeight: 1.1 }}
                       className={`text-white font-medium drop-shadow-sm transition-all duration-300 text-left`}
                     >
                       {headlineToRender.split('\n').map((line, i) => (
