@@ -89,7 +89,6 @@ export default function SocialAssetGenerator() {
   const isAccelerator = selectedCohort.id === 'accelerator';
   const isForum = selectedCohort.id === 'forum';
 
-  // Safely intercept exact "(No image)" variation for formatting overrides
   const isCloudNoImage = isCloud && (normalizedHeadline.includes('(No image)') || normalizedHeadline.includes('(No Logo)'));
   const isCenteredLayout = isCloudNoImage && selectedFormat !== '16:9';
   const headlineLen = currentHeadline.length;
@@ -113,9 +112,7 @@ export default function SocialAssetGenerator() {
     else if (isAccelerator) headlineScale = headlineLen <= 13 ? 1.0 : 0.8;
   }
 
-  // Pre-calculate exact rem strings to bypass Tailwind JIT compiler issues
-  const mainHeadlineRem = baseSizeRem * headlineScale;
-  const fasterHeadlineRem = mainHeadlineRem * 2.3;
+  const headlineClass = `text-[calc(var(--base-size)*${headlineScale})]`;
 
   const isConnectingExperts = isForum && normalizedHeadline.includes('Connecting with experts');
   const isConnectingExperts9to16 = isConnectingExperts && selectedFormat === '9:16';
@@ -147,7 +144,6 @@ export default function SocialAssetGenerator() {
     : 'text-lg sm:text-xl md:text-2xl';
 
   const isForum16to9 = isForum && selectedFormat === '16:9';
-  const isForum16or9to16 = isForum && (selectedFormat === '16:9' || selectedFormat === '9:16');
   const shouldReduceLogoLockup = (isCloud || isAccelerator) && (selectedFormat === '16:9' || selectedFormat === '9:16');
 
   let uploadScale = 1.0;
@@ -172,14 +168,13 @@ export default function SocialAssetGenerator() {
   else if (selectedFormat === '9:16') uploadPanelPlacementClass = 'bottom-16 right-3 sm:bottom-20 sm:right-4 md:bottom-24 md:right-5 w-40 sm:w-48 md:w-56';
   else uploadPanelPlacementClass = 'bottom-2 right-2 sm:bottom-3 sm:right-3 w-32 sm:w-36 md:w-44';
 
-  // Absolute placement rules cleanly separated to prevent center-scaling conflicts
   let ctaPlacementClass = '';
   if (isCenteredLayout) {
     ctaPlacementClass = 'absolute z-10 w-auto inline-flex items-center pointer-events-none transition-all duration-300 ease-in-out left-1/2 -translate-x-1/2 ';
-    if (selectedFormat === '9:16') ctaPlacementClass += 'bottom-16 sm:bottom-20 md:bottom-24 scale-[0.75] origin-bottom';
-    else ctaPlacementClass += 'bottom-7 sm:bottom-8 md:bottom-10 scale-100 origin-bottom';
+    if (selectedFormat === '9:16') ctaPlacementClass += 'bottom-16 sm:bottom-20 md:bottom-24 scale-90';
+    else ctaPlacementClass += 'bottom-7 sm:bottom-8 md:bottom-10 scale-100';
   } else if (isCloudNoImage && selectedFormat === '16:9') {
-    ctaPlacementClass = 'absolute z-10 w-auto inline-flex items-center pointer-events-none transition-all duration-300 ease-in-out right-8 sm:right-12 md:right-14 bottom-6 sm:bottom-8 scale-[0.75] origin-bottom-right';
+    ctaPlacementClass = 'absolute z-10 w-auto inline-flex items-center pointer-events-none transition-all duration-300 ease-in-out right-10 sm:right-12 md:right-14 bottom-8 sm:bottom-10 scale-[0.80] origin-bottom-right';
   } else {
     ctaPlacementClass = 'absolute z-10 w-auto inline-flex items-center pointer-events-none transition-all duration-300 ease-in-out left-7 sm:left-9 md:left-10 ';
     if (selectedFormat === '16:9') ctaPlacementClass += 'bottom-3.5 sm:bottom-4 md:bottom-5 scale-[0.70] origin-bottom-left';
@@ -187,14 +182,14 @@ export default function SocialAssetGenerator() {
     else ctaPlacementClass += 'bottom-7 sm:bottom-8 md:bottom-9 scale-100 origin-bottom-left';
   }
 
-  let copyPlacementClass = 'absolute z-10 pointer-events-none transition-all duration-300 ease-in-out ';
-  if (isCenteredLayout) {
-    copyPlacementClass += 'left-1/2 -translate-x-1/2 text-center w-full px-8 ';
-    copyPlacementClass += selectedFormat === '9:16' ? 'top-[36%] max-w-[95%]' : 'top-[34%] max-w-[95%]';
-  } else if (isCloudNoImage && selectedFormat === '16:9') {
-    copyPlacementClass += 'left-8 sm:left-10 md:left-12 text-left top-[32%] sm:top-[34%] max-w-[85%]';
+  let copyPlacementClass = 'absolute z-10 pointer-events-none transition-all duration-300 ease-in-out text-left ';
+  if (isCloudNoImage) {
+    copyPlacementClass += 'left-8 sm:left-10 md:left-12 ';
+    if (selectedFormat === '16:9') copyPlacementClass += 'top-[34%] max-w-[85%]';
+    else if (selectedFormat === '9:16') copyPlacementClass += 'top-[36%] right-8 sm:right-10 md:right-12';
+    else copyPlacementClass += 'top-[36%] right-8 sm:right-10 md:right-12';
   } else {
-    copyPlacementClass += 'left-7 sm:left-9 md:left-10 text-left ';
+    copyPlacementClass += 'left-7 sm:left-9 md:left-10 ';
     if (selectedFormat === '16:9') copyPlacementClass += 'top-[28%] sm:top-[30%] max-w-[62%] sm:max-w-[65%]';
     else if (selectedFormat === '9:16') copyPlacementClass += 'top-[22%] sm:top-[24%] max-w-[86%] sm:max-w-[88%]';
     else copyPlacementClass += 'top-[33%] sm:top-[35%] max-w-[86%] sm:max-w-[88%]';
@@ -205,9 +200,9 @@ export default function SocialAssetGenerator() {
   else if (isCloudNoImage) logoLockupPlacementClass += 'left-8 sm:left-10 md:left-12 items-start text-left ';
   else logoLockupPlacementClass += 'left-7 sm:left-9 md:left-10 items-start text-left ';
 
-  if (selectedFormat === '16:9') logoLockupPlacementClass += (isForum ? 'top-9 sm:top-11 ' : 'top-6 sm:top-8 ');
-  else if (selectedFormat === '9:16') logoLockupPlacementClass += 'top-10 sm:top-12 ';
-  else logoLockupPlacementClass += 'top-8 sm:top-10 ';
+  if (selectedFormat === '16:9') logoLockupPlacementClass += (isForum ? 'top-9 sm:top-11 ' : 'top-8 sm:top-10 ');
+  else if (selectedFormat === '9:16') logoLockupPlacementClass += 'top-12 sm:top-14 ';
+  else logoLockupPlacementClass += 'top-10 sm:top-12 ';
 
   if (isForum && selectedFormat === '9:16') logoLockupPlacementClass += '-translate-y-3 sm:-translate-y-4 ';
   
@@ -219,22 +214,14 @@ export default function SocialAssetGenerator() {
 
   const currentAssetSrc = selectedCohort.assets[assetType as keyof typeof selectedCohort.assets];
 
-  // Specific dynamic crop alignment matching exact frame streaks via safe object properties
   let mediaStyle: React.CSSProperties = { width: '100%', height: '100%', objectFit: 'cover' };
   if (selectedCohort.id === 'forum') {
      mediaStyle.transform = 'translate(25%, -25%) scale(2.2)';
   } else if (selectedCohort.id === 'accelerator') {
      mediaStyle.transform = 'translate(25%, 25%) scale(1.5)';
   } else if (selectedCohort.id === 'cloud') {
-     if (selectedFormat === '16:9') {
-        mediaStyle.transform = 'scaleX(-1) scale(1.15)'; // Flip video horizontally to anchor streaks on the right
-        mediaStyle.transformOrigin = 'center center';
-        mediaStyle.objectPosition = 'center center';
-     } else {
-        mediaStyle.transform = 'scale(1.2)';
-        mediaStyle.transformOrigin = 'left center'; // Safely pin to left edge
-        mediaStyle.objectPosition = 'left center';
-     }
+     mediaStyle.objectPosition = 'right center';
+     mediaStyle.transform = 'scale(1.2)';
   }
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -342,9 +329,6 @@ export default function SocialAssetGenerator() {
         if (mAspect > cAspect) { dh = exportHeight; dw = exportHeight * mAspect; } 
         else { dw = exportWidth; dh = exportWidth / mAspect; }
 
-        const cx = (exportWidth - dw) / 2;
-        const cy = (exportHeight - dh) / 2;
-
         ctx.save();
         if (selectedCohort.id === 'forum') {
           ctx.translate(exportWidth * 0.75, exportHeight * 0.25);
@@ -355,16 +339,15 @@ export default function SocialAssetGenerator() {
           ctx.scale(1.5, 1.5);
           ctx.drawImage(media, -dw/2, -dh/2, dw, dh);
         } else if (selectedCohort.id === 'cloud') {
-          if (selectedFormat === '16:9') {
-              ctx.translate(exportWidth/2, exportHeight/2);
-              ctx.scale(-1.15, 1.15); // Mathematically mirror the background on export
-              ctx.drawImage(media, -dw/2, -dh/2, dw, dh);
-          } else {
-              ctx.translate(0, exportHeight/2);
-              ctx.scale(1.2, 1.2);
-              ctx.drawImage(media, 0, cy - exportHeight/2, dw, dh);
-          }
+          const scale = 1.2;
+          const scaledW = dw * scale;
+          const scaledH = dh * scale;
+          const tx = exportWidth - scaledW;
+          const ty = (exportHeight - scaledH) / 2;
+          ctx.drawImage(media, tx, ty, scaledW, scaledH);
         } else {
+          const cx = (exportWidth - dw) / 2;
+          const cy = (exportHeight - dh) / 2;
           ctx.drawImage(media, cx, cy, dw, dh);
         }
         ctx.restore();
@@ -410,12 +393,12 @@ export default function SocialAssetGenerator() {
         ctx.fillRect(0, 0, exportWidth, exportHeight);
 
         const lockupScale = (isForum && selectedFormat === '16:9') ? 0.825 : (isForum && selectedFormat === '9:16') ? 0.94 : shouldReduceLogoLockup ? 0.85 : 1.0;
-        const logoH = Math.round(46 * lockupScale);
+        const logoH = Math.round(36 * lockupScale);
         const textX = 80;
         const logoX = isCenteredLayout ? (exportWidth / 2) : textX;
         const logoY = (isForum && selectedFormat === '16:9') ? 74 : (isForum && selectedFormat === '9:16') ? 48 : (isCloudNoImage && selectedFormat === '9:16') ? 110 : 80;
         
-        const actualLogoX = isCenteredLayout ? logoX - (Math.round(85 * lockupScale) / 2) : logoX;
+        const actualLogoX = isCenteredLayout ? logoX - (Math.round(68 * lockupScale) / 2) : logoX;
         
         if (logoImg) {
           const logoAspect = logoImg.width / logoImg.height;
@@ -425,11 +408,10 @@ export default function SocialAssetGenerator() {
           drawFallbackLogo(ctx, actualLogoX, logoY, lockupScale);
         }
 
-        // Apply strict 2x G padding
-        const programGap = (isForum && selectedFormat === '16:9') ? 26 : isForum ? 30 : Math.round(logoH * 1.6);
+        const programGap = (isForum && selectedFormat === '16:9') ? 26 : isForum ? 30 : Math.round(logoH * 2);
         const programY = logoY + logoH + programGap;
         ctx.fillStyle = '#FFFFFF';
-        ctx.font = `500 ${Math.round(56 * lockupScale)}px "Google Sans Flex", sans-serif`;
+        ctx.font = `500 ${Math.round(48 * lockupScale)}px "Google Sans Flex", sans-serif`;
         ctx.textAlign = isCenteredLayout ? 'center' : 'left';
         ctx.fillText(selectedCohort.name, logoX, programY);
 
@@ -438,7 +420,7 @@ export default function SocialAssetGenerator() {
           const topClearance = isConnectingExperts16to9 ? Math.round(10 * 1.0) : (selectedFormat === '16:9') ? Math.round(110 * 1.0) : 210; 
           mainCopyY = programY + topClearance;
         } else if (isCloudNoImage) {
-          mainCopyY = selectedFormat === '16:9' ? exportHeight * 0.44 : selectedFormat === '9:16' ? exportHeight * 0.40 : exportHeight * 0.40;
+          mainCopyY = selectedFormat === '16:9' ? exportHeight * 0.44 : exportHeight * 0.40;
         } else {
           mainCopyY = selectedFormat === '16:9' ? exportHeight * 0.32 : selectedFormat === '9:16' ? exportHeight * 0.22 : exportHeight * 0.35;
         }
@@ -448,14 +430,27 @@ export default function SocialAssetGenerator() {
         const canvasHeadlineSize = Math.round(baseCanvasHeadlineSize * headlineScale);
 
         if (isCloudNoImage) {
-          ctx.textAlign = isCenteredLayout ? 'center' : 'left';
-          ctx.font = `500 ${canvasHeadlineSize}px "Google Sans Flex", sans-serif`;
-          ctx.fillText("We're building", logoX, mainCopyY);
+          ctx.textAlign = 'left';
+          
+          let buildSize = 120;
+          let fasterSize = 280;
+          let fasterOffsetX = textX;
 
-          const fasterSize = Math.round(canvasHeadlineSize * 2.3);
+          if (selectedFormat === '16:9') {
+             buildSize = 120; fasterSize = 280; fasterOffsetX = textX + 350;
+          } else if (selectedFormat === '9:16') {
+             buildSize = 140; fasterSize = 350; fasterOffsetX = textX;
+          } else if (selectedFormat === '4:5') {
+             buildSize = 130; fasterSize = 310; fasterOffsetX = textX;
+          } else if (selectedFormat === '1:1') {
+             buildSize = 120; fasterSize = 290; fasterOffsetX = textX;
+          }
+
+          ctx.font = `500 ${buildSize}px "Google Sans Flex", sans-serif`;
+          ctx.fillText("We're building", textX, mainCopyY);
+
           ctx.font = `500 ${fasterSize}px "Google Sans Flex", sans-serif`;
-          const fasterX = isCenteredLayout ? logoX : logoX + (exportWidth * 0.08);
-          ctx.fillText("faster", fasterX, mainCopyY + Math.round(fasterSize * 0.85));
+          ctx.fillText("faster", fasterOffsetX, mainCopyY + Math.round(fasterSize * 0.85));
         } else {
           ctx.textAlign = 'left';
           ctx.font = `500 ${canvasHeadlineSize}px "Google Sans Flex", sans-serif`;
@@ -557,10 +552,8 @@ export default function SocialAssetGenerator() {
         ctx.save();
         ctx.beginPath();
         ctx.roundRect(ctaX, ctaY, pillW, pillH, pillH / 2);
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.16)';
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.lineWidth = 1.5;
         ctx.stroke();
 
         ctx.fillStyle = '#FFFFFF';
@@ -605,7 +598,7 @@ export default function SocialAssetGenerator() {
               <Sparkles className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-base sm:text-lg font-medium text-white tracking-tight flex items-center gap-2">
+              <h1 className="text-base sm:text-lg font-medium text-white flex items-center gap-2">
                 Google for Startups
                 <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/80 border border-white/10 font-normal">
                   Social Asset Generator
@@ -635,7 +628,7 @@ export default function SocialAssetGenerator() {
       <main className="flex-1 max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 p-4 sm:p-6 lg:p-8">
         <section className="lg:col-span-7 flex flex-col items-center justify-start min-h-[580px] lg:min-h-[660px]">
           <div className="w-full flex items-center justify-between mb-3 text-xs text-white/60 px-1">
-            <span className="font-medium tracking-wide uppercase text-[11px] text-white/50 flex items-center gap-1.5">
+            <span className="font-medium uppercase text-[11px] text-white/50 flex items-center gap-1.5">
               <Layers className="w-3.5 h-3.5 text-blue-400" />
               Live Canvas Preview
             </span>
@@ -704,7 +697,7 @@ export default function SocialAssetGenerator() {
                 <img
                   src="/assets/gfs-logo-white.png"
                   alt="Google for Startups Logo"
-                  className={`${(isForum && selectedFormat === '16:9') ? 'h-5 sm:h-5.5 md:h-[24px]' : 'h-5 sm:h-6 md:h-7'} w-auto object-contain block transition-all duration-300`}
+                  className={`${(isForum && selectedFormat === '16:9') ? 'h-5 sm:h-5.5 md:h-[24px]' : 'h-5 sm:h-6 md:h-[26px]'} w-auto object-contain block transition-all duration-300`}
                   onError={(e) => {
                     const target = e.currentTarget;
                     target.style.display = 'none';
@@ -717,7 +710,7 @@ export default function SocialAssetGenerator() {
                     }
                   }}
                 />
-                <p className={`mt-8 sm:mt-10 md:mt-12 text-[20px] sm:text-[24px] md:text-[28px] text-white font-medium tracking-tight leading-tight transition-all duration-300`}>
+                <p className={`mt-[52px] text-[20px] sm:text-[24px] md:text-[26px] text-white font-medium transition-all duration-300`}>
                   {selectedCohort.name}
                 </p>
 
@@ -734,15 +727,15 @@ export default function SocialAssetGenerator() {
                     } pointer-events-none transition-all duration-300 ease-in-out text-left`}
                   >
                     <h2
-                      style={{ fontSize: `${mainHeadlineRem}rem` }}
-                      className={`text-white font-medium leading-[1.04] tracking-tight drop-shadow-sm transition-all duration-300 text-left`}
+                      style={{ fontSize: `${baseSizeRem * headlineScale}rem`, lineHeight: 1.1 }}
+                      className={`text-white font-medium drop-shadow-sm transition-all duration-300 text-left`}
                     >
                       {headlineToRender.split('\n').map((line, i) => (
                         <span key={i} className="block whitespace-nowrap">{line}</span>
                       ))}
                     </h2>
                     {currentSupportingText && (
-                      <p className={`mt-2.5 sm:mt-3 text-white/90 font-medium ${supportingTextSizeClass} leading-snug tracking-normal drop-shadow-sm transition-all duration-300 text-left`}>
+                      <p className={`mt-2.5 sm:mt-3 text-white/90 font-medium ${supportingTextSizeClass} drop-shadow-sm transition-all duration-300 text-left`}>
                         {currentSupportingText}
                       </p>
                     )}
@@ -753,24 +746,28 @@ export default function SocialAssetGenerator() {
               {!isForum && (
                 <div className={copyPlacementClass}>
                   {isCloudNoImage ? (
-                    <div className={`text-white font-medium drop-shadow-sm transition-all duration-300 ${isCenteredLayout ? 'text-center w-full' : 'text-left'}`}>
-                      <div style={{ fontSize: `${mainHeadlineRem}rem`, lineHeight: 1.05, letterSpacing: '-0.02em' }}>
+                    <div className="text-white font-medium text-left">
+                      <div className={`
+                        ${selectedFormat === '16:9' ? 'text-4xl sm:text-5xl md:text-[56px]' : ''}
+                        ${selectedFormat === '1:1' ? 'text-4xl sm:text-5xl md:text-[64px]' : ''}
+                        ${selectedFormat === '4:5' ? 'text-5xl sm:text-6xl md:text-[72px]' : ''}
+                        ${selectedFormat === '9:16' ? 'text-5xl sm:text-6xl md:text-[80px]' : ''}
+                      `} style={{ lineHeight: 1.1 }}>
                         We're building
                       </div>
-                      <div style={{ 
-                        fontSize: `${fasterHeadlineRem}rem`, 
-                        lineHeight: 0.88, 
-                        marginTop: '4px',
-                        marginLeft: isCenteredLayout ? '0' : '8%',
-                        letterSpacing: '-0.03em' 
-                      }}>
+                      <div className={`
+                        ${selectedFormat === '16:9' ? 'text-[80px] sm:text-[100px] md:text-[130px] ml-[20%]' : ''}
+                        ${selectedFormat === '1:1' ? 'text-[90px] sm:text-[120px] md:text-[160px] ml-0' : ''}
+                        ${selectedFormat === '4:5' ? 'text-[100px] sm:text-[140px] md:text-[180px] ml-0' : ''}
+                        ${selectedFormat === '9:16' ? 'text-[110px] sm:text-[160px] md:text-[210px] ml-0' : ''}
+                      `} style={{ lineHeight: 0.9, marginTop: '8px' }}>
                         faster
                       </div>
                     </div>
                   ) : (
                     <h2
-                      style={{ fontSize: `${mainHeadlineRem}rem` }}
-                      className={`text-white font-medium leading-[1.04] tracking-tight drop-shadow-sm transition-all duration-300 ${isCenteredLayout ? 'text-center w-full' : 'text-left'}`}
+                      style={{ fontSize: `${baseSizeRem * headlineScale}rem`, lineHeight: 1.1 }}
+                      className={`text-white font-medium drop-shadow-sm transition-all duration-300 text-left`}
                     >
                       {headlineToRender.split('\n').map((line, i) => (
                           <span key={i} className="block whitespace-nowrap">{line}</span>
@@ -779,7 +776,7 @@ export default function SocialAssetGenerator() {
                   )}
 
                   {currentSupportingText && !isCloudNoImage && (
-                    <p className={`mt-2.5 sm:mt-3 text-white/90 font-medium ${supportingTextSizeClass} leading-snug tracking-normal drop-shadow-sm transition-all duration-300 ${isCenteredLayout ? 'text-center' : 'text-left'}`}>
+                    <p className={`mt-2.5 sm:mt-3 text-white/90 font-medium ${supportingTextSizeClass} drop-shadow-sm transition-all duration-300 text-left`}>
                       {currentSupportingText}
                     </p>
                   )}
@@ -801,7 +798,7 @@ export default function SocialAssetGenerator() {
               )}
 
               <div className={ctaPlacementClass}>
-                <div className="w-auto inline-flex items-center justify-center px-5 py-2 sm:px-6 sm:py-2.5 rounded-full bg-white/15 backdrop-blur-md border border-white/30 shadow-lg text-white font-medium text-xs sm:text-sm tracking-wide text-center whitespace-nowrap font-['Google_Sans_Flex',sans-serif]">
+                <div className="px-6 py-2.5 rounded-full border border-white/40 bg-transparent text-white font-medium text-xs sm:text-sm text-center whitespace-nowrap font-['Google_Sans_Flex',sans-serif]">
                   Find out more
                 </div>
               </div>
@@ -847,7 +844,7 @@ export default function SocialAssetGenerator() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-medium text-white/80 uppercase tracking-wider flex items-center justify-between">
+              <label className="text-xs font-medium text-white/80 uppercase flex items-center justify-between">
                 <span>Format</span>
                 <span className="text-[11px] text-blue-400 font-normal">Aspect Ratio</span>
               </label>
@@ -867,7 +864,7 @@ export default function SocialAssetGenerator() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-medium text-white/80 uppercase tracking-wider flex items-center justify-between">
+              <label className="text-xs font-medium text-white/80 uppercase flex items-center justify-between">
                 <span>1. Program</span>
                 <span className="text-[11px] text-white/40 normal-case font-normal">Mapped from config.ts</span>
               </label>
@@ -889,7 +886,7 @@ export default function SocialAssetGenerator() {
 
             {selectedCohort.hasClasses && selectedCohort.classes && (
               <div className="space-y-2 p-4 rounded-xl bg-blue-500/5 border border-blue-500/20 animate-fade-in">
-                <label className="text-xs font-medium text-blue-300 uppercase tracking-wider flex items-center justify-between">
+                <label className="text-xs font-medium text-blue-300 uppercase flex items-center justify-between">
                   <span className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5 text-blue-400" />2. Class / Region</span>
                   <span className="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full font-normal">Accelerator Only</span>
                 </label>
@@ -909,7 +906,7 @@ export default function SocialAssetGenerator() {
             )}
 
             <div className="space-y-2">
-              <label className="text-xs font-medium text-white/80 uppercase tracking-wider flex items-center justify-between">
+              <label className="text-xs font-medium text-white/80 uppercase flex items-center justify-between">
                 <span>{selectedCohort.hasClasses ? '3. Asset Type' : '2. Asset Type'}</span>
                 <span className="text-[11px] text-white/40 font-normal">Motion vs Static</span>
               </label>
@@ -922,7 +919,7 @@ export default function SocialAssetGenerator() {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-medium text-white/80 uppercase tracking-wider flex items-center gap-1.5"><Type className="w-3.5 h-3.5 text-blue-400" /><span>{selectedCohort.hasClasses ? '4. Supporting Copy' : '3. Copy / Headline'}</span></label>
+                <label className="text-xs font-medium text-white/80 uppercase flex items-center gap-1.5"><Type className="w-3.5 h-3.5 text-blue-400" /><span>{selectedCohort.hasClasses ? '4. Supporting Copy' : '3. Copy / Headline'}</span></label>
                 <button type="button" onClick={() => setEnableCustomCopy(!enableCustomCopy)} className="text-[11px] text-blue-400 hover:text-blue-300 transition-colors">{enableCustomCopy ? 'Use Presets' : 'Custom Text'}</button>
               </div>
 
@@ -961,7 +958,7 @@ export default function SocialAssetGenerator() {
             {!isCloudNoImage && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-2">
-                  <label className="text-xs font-medium text-white/80 uppercase tracking-wider flex items-center gap-1.5"><Upload className="w-3.5 h-3.5 text-blue-400" /><span>Upload Asset</span></label>
+                  <label className="text-xs font-medium text-white/80 uppercase flex items-center gap-1.5"><Upload className="w-3.5 h-3.5 text-blue-400" /><span>Upload Asset</span></label>
                   <div className="inline-flex items-center bg-[#181b22] border border-white/15 p-0.5 rounded-lg">
                     <button type="button" onClick={() => setUploadType('photo')} className={`px-3 py-1 text-xs rounded-md font-medium transition-all ${uploadType === 'photo' ? 'bg-blue-600 text-white shadow-sm' : 'text-white/60 hover:text-white'}`}>Photo</button>
                     <button type="button" onClick={() => setUploadType('logo')} className={`px-3 py-1 text-xs rounded-md font-medium transition-all ${uploadType === 'logo' ? 'bg-blue-600 text-white shadow-sm' : 'text-white/60 hover:text-white'}`}>Logo</button>
@@ -993,7 +990,7 @@ export default function SocialAssetGenerator() {
             )}
 
             <div className="pt-3 border-t border-white/10 space-y-3">
-              <label className="text-xs font-medium text-white/80 uppercase tracking-wider block">Export Social Assets</label>
+              <label className="text-xs font-medium text-white/80 uppercase block">Export Social Assets</label>
               <div className="grid grid-cols-2 gap-3">
                 <button type="button" disabled={isExportingImage || isExportingVideo} onClick={handleExportImage} className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl bg-white text-[#121317] font-medium text-sm hover:bg-white/90 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-white/10">
                   {isExportingImage ? <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" /> : <Download className="w-4 h-4" />}<span>Export Image</span>
