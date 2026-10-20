@@ -90,44 +90,33 @@ export default function SocialAssetGenerator() {
   const isForum = selectedCohort.id === 'forum';
 
   const isCloudNoImage = isCloud && (normalizedHeadline.includes('(No image)') || normalizedHeadline.includes('(No Logo)'));
+  const isCenteredLayout = isCloudNoImage && selectedFormat !== '16:9';
   const headlineLen = currentHeadline.length;
 
   const baseSizeRem = selectedFormat === '16:9' ? 2.25 : 3.0;
   let headlineScale = 1.0;
 
   if (selectedFormat === '16:9') {
-    if (isForum) {
-      headlineScale = normalizedHeadline.includes('Connecting with experts') ? 1.08 : 1.2;
-    } else if (isCloud) {
-      headlineScale = isCloudNoImage ? 1.4 : 1.44;
-    } else if (isAccelerator) {
-      headlineScale = headlineLen <= 13 ? 1.575 : 0.96;
-    }
+    if (isForum) headlineScale = normalizedHeadline.includes('Connecting with experts') ? 1.08 : 1.2;
+    else if (isCloud) headlineScale = isCloudNoImage ? 1.4 : 1.44;
+    else if (isAccelerator) headlineScale = headlineLen <= 13 ? 1.575 : 0.96;
   } else if (selectedFormat === '9:16') {
-    if (isForum) {
-      headlineScale = 0.9;
-    } else if (isCloud) {
-      headlineScale = isCloudNoImage ? 0.9 : 1.2;
-    } else if (isAccelerator) {
-      headlineScale = headlineLen <= 13 ? 0.8 : 0.64;
-    }
+    if (isForum) headlineScale = 0.9;
+    else if (isCloud) headlineScale = isCloudNoImage ? 0.95 : 1.2;
+    else if (isAccelerator) headlineScale = headlineLen <= 13 ? 0.8 : 0.64;
   } else if (selectedFormat === '1:1') {
-    if (isCloud) {
-      headlineScale = isCloudNoImage ? 1.05 : 1.2;
-    } else if (isAccelerator) {
-      headlineScale = headlineLen <= 13 ? 1.0 : 0.704;
-    }
+    if (isCloud) headlineScale = isCloudNoImage ? 1.05 : 1.2;
+    else if (isAccelerator) headlineScale = headlineLen <= 13 ? 1.0 : 0.704;
   } else {
-    if (isCloud) {
-      headlineScale = isCloudNoImage ? 1.05 : 1.2;
-    } else if (isAccelerator) {
-      headlineScale = headlineLen <= 13 ? 1.0 : 0.8;
-    }
+    if (isCloud) headlineScale = isCloudNoImage ? 1.05 : 1.2;
+    else if (isAccelerator) headlineScale = headlineLen <= 13 ? 1.0 : 0.8;
   }
 
   const headlineClass = `text-[calc(var(--base-size)*${headlineScale})]`;
+
   const mainHeadlineRem = baseSizeRem * headlineScale;
-  const fasterHeadlineRem = mainHeadlineRem * 2.3;
+  const buildHeadlineRem = mainHeadlineRem * 1.15;
+  const fasterHeadlineRem = buildHeadlineRem * 1.7;
 
   const isConnectingExperts = isForum && normalizedHeadline.includes('Connecting with experts');
   const isConnectingExperts9to16 = isConnectingExperts && selectedFormat === '9:16';
@@ -164,82 +153,51 @@ export default function SocialAssetGenerator() {
 
   let uploadScale = 1.0;
   if (selectedFormat === '16:9') {
-    if (isForum16to9) {
-      uploadScale = 1.0;
-    } else if (isCloud) {
-      uploadScale = 0.85; 
-    } else if (isAccelerator && headlineLen <= 13) {
-      uploadScale = 0.90;
-    }
+    if (isForum16to9) uploadScale = 1.0;
+    else if (isCloud) uploadScale = 0.85; 
+    else if (isAccelerator && headlineLen <= 13) uploadScale = 0.90;
   } else if (selectedFormat === '9:16') {
-    if (isForum || isCloud || isAccelerator) {
-      uploadScale = 0.75;
-    }
+    if (isForum || isCloud || isAccelerator) uploadScale = 0.75;
   }
 
-  const uploadScaleClass = uploadScale === 0.75 
-    ? 'scale-75 origin-bottom-right' 
-    : uploadScale === 0.85 
-    ? 'scale-[0.85] origin-bottom-right' 
-    : uploadScale === 0.90 
-    ? 'scale-90 origin-bottom-right' 
-    : 'scale-100 origin-bottom-right';
+  const uploadScaleClass = uploadScale === 0.75 ? 'scale-75 origin-bottom-right' : uploadScale === 0.85 ? 'scale-[0.85] origin-bottom-right' : uploadScale === 0.90 ? 'scale-90 origin-bottom-right' : 'scale-100 origin-bottom-right';
 
   let uploadPanelAspectClass = 'aspect-square';
-  if (isForum16to9 || uploadType === 'photo') {
-    uploadPanelAspectClass = 'aspect-[4/5]';
-  }
-  if (selectedFormat === '1:1') {
-    uploadPanelAspectClass = 'aspect-square';
-  }
-  if (selectedFormat === '16:9' && uploadType !== 'photo') {
-    uploadPanelAspectClass = 'aspect-video';
-  }
+  if (isForum16to9 || uploadType === 'photo') uploadPanelAspectClass = 'aspect-[4/5]';
+  if (selectedFormat === '1:1') uploadPanelAspectClass = 'aspect-square';
+  if (selectedFormat === '16:9' && uploadType !== 'photo') uploadPanelAspectClass = 'aspect-video';
 
   let uploadPanelPlacementClass = '';
-  if (isForum16to9) {
-    uploadPanelPlacementClass = 'bottom-3 right-3 sm:bottom-4 sm:right-4 h-[75%] w-auto max-w-none';
-  } else if (selectedFormat === '16:9') {
-    uploadPanelPlacementClass = 'bottom-3 right-3 sm:bottom-4 sm:right-4 w-44 sm:w-56 md:w-68';
-  } else if (selectedFormat === '9:16') {
-    uploadPanelPlacementClass = 'bottom-16 right-3 sm:bottom-20 sm:right-4 md:bottom-24 md:right-5 w-40 sm:w-48 md:w-56';
-  } else {
-    uploadPanelPlacementClass = 'bottom-2 right-2 sm:bottom-3 sm:right-3 w-32 sm:w-36 md:w-44';
-  }
+  if (isForum16to9) uploadPanelPlacementClass = 'bottom-3 right-3 sm:bottom-4 sm:right-4 h-[75%] w-auto max-w-none';
+  else if (selectedFormat === '16:9') uploadPanelPlacementClass = 'bottom-3 right-3 sm:bottom-4 sm:right-4 w-44 sm:w-56 md:w-68';
+  else if (selectedFormat === '9:16') uploadPanelPlacementClass = 'bottom-16 right-3 sm:bottom-20 sm:right-4 md:bottom-24 md:right-5 w-40 sm:w-48 md:w-56';
+  else uploadPanelPlacementClass = 'bottom-2 right-2 sm:bottom-3 sm:right-3 w-32 sm:w-36 md:w-44';
 
-  let ctaPlacementClass = 'absolute z-10 w-auto inline-flex items-center pointer-events-none transition-all duration-300 ease-in-out ';
-  if (isCloudNoImage && selectedFormat === '16:9') {
-    ctaPlacementClass += 'right-10 sm:right-12 md:right-14 bottom-8 sm:bottom-10 scale-[0.80] origin-bottom-right';
-  } else if (isCloudNoImage) {
-    ctaPlacementClass += 'left-8 sm:left-10 md:left-12 bottom-12 sm:bottom-16 md:bottom-20 scale-90 origin-bottom-left';
+  let ctaPlacementClass = '';
+  if (isCenteredLayout) {
+    ctaPlacementClass = 'absolute z-10 w-auto inline-flex items-center pointer-events-none transition-all duration-300 ease-in-out left-1/2 -translate-x-1/2 ';
+    if (selectedFormat === '9:16') ctaPlacementClass += 'bottom-16 sm:bottom-20 md:bottom-24 scale-90';
+    else ctaPlacementClass += 'bottom-7 sm:bottom-8 md:bottom-10 scale-100';
+  } else if (isCloudNoImage && selectedFormat === '16:9') {
+    ctaPlacementClass = 'absolute z-10 w-auto inline-flex items-center pointer-events-none transition-all duration-300 ease-in-out right-10 sm:right-12 md:right-14 bottom-8 sm:bottom-10 scale-[0.80] origin-bottom-right';
   } else {
-    ctaPlacementClass += 'left-7 sm:left-9 md:left-10 ';
-    if (selectedFormat === '16:9') {
-      ctaPlacementClass += 'bottom-3.5 sm:bottom-4 md:bottom-5 scale-[0.70] origin-bottom-left';
-    } else if (selectedFormat === '9:16') {
-      ctaPlacementClass += 'bottom-16 sm:bottom-20 md:bottom-24 scale-[0.70] origin-bottom-left';
-    } else {
-      ctaPlacementClass += 'bottom-7 sm:bottom-8 md:bottom-9 scale-100 origin-bottom-left';
-    }
+    ctaPlacementClass = 'absolute z-10 w-auto inline-flex items-center pointer-events-none transition-all duration-300 ease-in-out left-7 sm:left-9 md:left-10 ';
+    if (selectedFormat === '16:9') ctaPlacementClass += 'bottom-3.5 sm:bottom-4 md:bottom-5 scale-[0.70] origin-bottom-left';
+    else if (selectedFormat === '9:16') ctaPlacementClass += 'bottom-16 sm:bottom-20 md:bottom-24 scale-[0.70] origin-bottom-left';
+    else ctaPlacementClass += 'bottom-7 sm:bottom-8 md:bottom-9 scale-100 origin-bottom-left';
   }
 
   let copyPlacementClass = 'absolute z-10 pointer-events-none transition-all duration-300 ease-in-out text-left ';
   if (isCloudNoImage) {
     copyPlacementClass += 'left-8 sm:left-10 md:left-12 ';
-    if (selectedFormat === '16:9') {
-      copyPlacementClass += 'top-[34%] max-w-[85%]';
-    } else {
-      copyPlacementClass += 'top-[36%] right-8 sm:right-10 md:right-12';
-    }
+    if (selectedFormat === '16:9') copyPlacementClass += 'top-[34%] max-w-[85%]';
+    else if (selectedFormat === '9:16') copyPlacementClass += 'top-[38%] right-8 sm:right-10 md:right-12';
+    else copyPlacementClass += 'top-[36%] right-8 sm:right-10 md:right-12';
   } else {
     copyPlacementClass += 'left-7 sm:left-9 md:left-10 ';
-    if (selectedFormat === '16:9') {
-      copyPlacementClass += 'top-[28%] sm:top-[30%] max-w-[62%] sm:max-w-[65%]';
-    } else if (selectedFormat === '9:16') {
-      copyPlacementClass += 'top-[22%] sm:top-[24%] max-w-[86%] sm:max-w-[88%]';
-    } else {
-      copyPlacementClass += 'top-[33%] sm:top-[35%] max-w-[86%] sm:max-w-[88%]';
-    }
+    if (selectedFormat === '16:9') copyPlacementClass += 'top-[28%] sm:top-[30%] max-w-[62%] sm:max-w-[65%]';
+    else if (selectedFormat === '9:16') copyPlacementClass += 'top-[22%] sm:top-[24%] max-w-[86%] sm:max-w-[88%]';
+    else copyPlacementClass += 'top-[33%] sm:top-[35%] max-w-[86%] sm:max-w-[88%]';
   }
 
   let logoLockupPlacementClass = 'absolute z-10 flex flex-col pointer-events-none transition-all duration-300 ease-in-out items-start text-left ';
@@ -294,20 +252,6 @@ export default function SocialAssetGenerator() {
     setUploadedFileName('');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
-    }
-  };
-
-  const setSampleLogo = (type: 'logo' | 'founder') => {
-    if (type === 'logo') {
-      setUploadType('logo');
-      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" rx="30" fill="#1e293b"/><circle cx="100" cy="80" r="45" fill="#4285F4"/><path d="M60 150 Q100 120 140 150 Z" fill="#34A853"/><text x="100" y="180" font-family="sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="#ffffff">AI STARTUP</text></svg>`;
-      setUploadedImage(`data:image/svg+xml;utf8,${encodeURIComponent(svg)}`);
-      setUploadedFileName('sample-startup-logo.svg');
-    } else {
-      setUploadType('photo');
-      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" rx="30" fill="#0f172a"/><circle cx="100" cy="85" r="42" fill="#FBBC04"/><circle cx="100" cy="180" r="70" fill="#EA4335"/><text x="100" y="190" font-family="sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#ffffff">FOUNDER</text></svg>`;
-      setUploadedImage(`data:image/svg+xml;utf8,${encodeURIComponent(svg)}`);
-      setUploadedFileName('sample-founder.svg');
     }
   };
 
@@ -382,16 +326,9 @@ export default function SocialAssetGenerator() {
         const mAspect = mw / mh;
         const cAspect = exportWidth / exportHeight;
 
-        let dw = exportWidth; 
-        let dh = exportHeight;
-        
-        if (mAspect > cAspect) { 
-          dh = exportHeight; 
-          dw = exportHeight * mAspect; 
-        } else { 
-          dw = exportWidth; 
-          dh = exportWidth / mAspect; 
-        }
+        let dw = exportWidth; let dh = exportHeight;
+        if (mAspect > cAspect) { dh = exportHeight; dw = exportHeight * mAspect; } 
+        else { dw = exportWidth; dh = exportWidth / mAspect; }
 
         ctx.save();
         if (selectedCohort.id === 'forum') {
@@ -458,7 +395,7 @@ export default function SocialAssetGenerator() {
 
         const lockupScale = (isForum && selectedFormat === '16:9') ? 0.825 : (isForum && selectedFormat === '9:16') ? 0.94 : shouldReduceLogoLockup ? 0.85 : 1.0;
         const logoH = Math.round(36 * lockupScale);
-        const textX = isCloudNoImage ? 96 : 80;
+        const textX = isCloudNoImage ? 110 : 80;
         const logoY = (isForum && selectedFormat === '16:9') ? 74 : (isForum && selectedFormat === '9:16') ? 48 : (isCloudNoImage && selectedFormat === '9:16') ? 110 : 80;
         
         if (logoImg) {
@@ -469,7 +406,6 @@ export default function SocialAssetGenerator() {
           drawFallbackLogo(ctx, textX, logoY, lockupScale);
         }
 
-        // Apply strict 2x G padding mathematically
         const programGap = (isForum && selectedFormat === '16:9') ? 26 : isForum ? 30 : Math.round(logoH * 2);
         const programY = logoY + logoH + programGap;
         ctx.fillStyle = '#FFFFFF';
@@ -482,7 +418,7 @@ export default function SocialAssetGenerator() {
           const topClearance = isConnectingExperts16to9 ? Math.round(10 * 1.0) : (selectedFormat === '16:9') ? Math.round(110 * 1.0) : 210; 
           mainCopyY = programY + topClearance;
         } else if (isCloudNoImage) {
-          mainCopyY = selectedFormat === '16:9' ? exportHeight * 0.44 : exportHeight * 0.40;
+          mainCopyY = selectedFormat === '16:9' ? exportHeight * 0.44 : exportHeight * 0.42;
         } else {
           mainCopyY = selectedFormat === '16:9' ? exportHeight * 0.32 : selectedFormat === '9:16' ? exportHeight * 0.22 : exportHeight * 0.35;
         }
@@ -494,33 +430,17 @@ export default function SocialAssetGenerator() {
         if (isCloudNoImage) {
           ctx.textAlign = 'left';
           
-          let buildSize = 120;
-          let fasterSize = 280;
-          let fasterOffsetX = textX;
-
-          if (selectedFormat === '16:9') {
-             buildSize = 120; 
-             fasterSize = 280; 
-             fasterOffsetX = textX + 350;
-          } else if (selectedFormat === '9:16') {
-             buildSize = 140; 
-             fasterSize = 350; 
-             fasterOffsetX = textX;
-          } else if (selectedFormat === '4:5') {
-             buildSize = 130; 
-             fasterSize = 310; 
-             fasterOffsetX = textX;
-          } else if (selectedFormat === '1:1') {
-             buildSize = 120; 
-             fasterSize = 290; 
-             fasterOffsetX = textX;
-          }
+          const buildSize = Math.round(canvasHeadlineSize * 1.15);
+          const fasterSize = Math.round(buildSize * 1.7);
 
           ctx.font = `500 ${buildSize}px "Google Sans Flex", sans-serif`;
           ctx.fillText("We're building", textX, mainCopyY);
 
+          // Precisely calculate the width of the first word natively to indent 'faster' correctly
+          const wereWidth = ctx.measureText("We're ").width;
+
           ctx.font = `500 ${fasterSize}px "Google Sans Flex", sans-serif`;
-          ctx.fillText("faster", fasterOffsetX, mainCopyY + Math.round(fasterSize * 0.85));
+          ctx.fillText("faster", textX + wereWidth, mainCopyY + Math.round(fasterSize * 0.82));
         } else {
           ctx.textAlign = 'left';
           ctx.font = `500 ${canvasHeadlineSize}px "Google Sans Flex", sans-serif`;
@@ -557,40 +477,27 @@ export default function SocialAssetGenerator() {
         }
 
         if (userImg && !isCloudNoImage) {
-          let userW = 351; 
-          let userH = 439;
-          let userX = exportWidth - userW - 28; 
-          let userY = exportHeight - userH - 28;
+          let userW = 351; let userH = 439;
+          let userX = exportWidth - userW - 28; let userY = exportHeight - userH - 28;
 
           if (isForum16to9) {
-            userH = Math.round(exportHeight * 0.75); 
-            userW = Math.round(userH * 4 / 5);
-            userX = exportWidth - userW - 32; 
-            userY = exportHeight - userH - 32;
+            userH = Math.round(exportHeight * 0.75); userW = Math.round(userH * 4 / 5);
+            userX = exportWidth - userW - 32; userY = exportHeight - userH - 32;
           } else if (selectedFormat === '1:1') {
-            userW = 351; 
-            userH = 351;
-            userX = exportWidth - userW - 28; 
-            userY = exportHeight - userH - 28;
+            userW = 351; userH = 351;
+            userX = exportWidth - userW - 28; userY = exportHeight - userH - 28;
           } else if (selectedFormat === '16:9') {
-            userW = 460; 
-            userH = Math.round(userW * 9 / 16); 
-            userX = exportWidth - userW - 32; 
-            userY = exportHeight - userH - 32;
+            userW = 460; userH = Math.round(userW * 9 / 16); 
+            userX = exportWidth - userW - 32; userY = exportHeight - userH - 32;
           } else if (selectedFormat === '9:16') {
-            userW = Math.round(351 * 1.25); 
-            userH = uploadType === 'logo' ? userW : Math.round(userW * 5 / 4);
-            userX = exportWidth - userW - 32; 
-            userY = exportHeight - userH - 180; 
+            userW = Math.round(351 * 1.25); userH = uploadType === 'logo' ? userW : Math.round(userW * 5 / 4);
+            userX = exportWidth - userW - 32; userY = exportHeight - userH - 180; 
           }
 
           if (uploadScale !== 1.0) {
-            const origW = userW; 
-            const origH = userH;
-            userW = Math.round(userW * uploadScale); 
-            userH = Math.round(userH * uploadScale);
-            userX += (origW - userW); 
-            userY += (origH - userH); 
+            const origW = userW; const origH = userH;
+            userW = Math.round(userW * uploadScale); userH = Math.round(userH * uploadScale);
+            userX += (origW - userW); userY += (origH - userH); 
           }
 
           ctx.save();
@@ -628,6 +535,8 @@ export default function SocialAssetGenerator() {
         if (isCloudNoImage && selectedFormat === '16:9') {
           ctaX = exportWidth - pillW - 120;
           ctaY = exportHeight - pillH - 80;
+        } else if (isCenteredLayout) {
+          ctaX = (exportWidth / 2) - (pillW / 2);
         }
 
         ctx.save();
@@ -828,20 +737,15 @@ export default function SocialAssetGenerator() {
                 <div className={copyPlacementClass}>
                   {isCloudNoImage ? (
                     <div className="text-white font-medium text-left">
-                      <div className={`
-                        ${selectedFormat === '16:9' ? 'text-4xl sm:text-5xl md:text-[56px]' : ''}
-                        ${selectedFormat === '1:1' ? 'text-4xl sm:text-5xl md:text-[64px]' : ''}
-                        ${selectedFormat === '4:5' ? 'text-5xl sm:text-6xl md:text-[72px]' : ''}
-                        ${selectedFormat === '9:16' ? 'text-5xl sm:text-6xl md:text-[80px]' : ''}
-                      `} style={{ lineHeight: 1.1 }}>
+                      <div style={{ fontSize: `${buildHeadlineRem}rem`, lineHeight: 1.05 }}>
                         We're building
                       </div>
-                      <div className={`
-                        ${selectedFormat === '16:9' ? 'text-[80px] sm:text-[100px] md:text-[130px] ml-[20%]' : ''}
-                        ${selectedFormat === '1:1' ? 'text-[90px] sm:text-[120px] md:text-[160px] ml-0' : ''}
-                        ${selectedFormat === '4:5' ? 'text-[100px] sm:text-[140px] md:text-[180px] ml-0' : ''}
-                        ${selectedFormat === '9:16' ? 'text-[110px] sm:text-[160px] md:text-[210px] ml-0' : ''}
-                      `} style={{ lineHeight: 0.9, marginTop: '8px' }}>
+                      <div style={{ 
+                        fontSize: `${fasterHeadlineRem}rem`, 
+                        lineHeight: 0.85, 
+                        marginTop: '0px',
+                        paddingLeft: '2.4em'
+                      }}>
                         faster
                       </div>
                     </div>
