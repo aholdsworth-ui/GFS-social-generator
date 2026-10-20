@@ -92,7 +92,7 @@ export default function SocialAssetGenerator() {
   const isAccelerator = selectedCohort.id === 'accelerator';
   const isForum = selectedCohort.id === 'forum';
   
-  const isCloudNoLogo = isCloud && normalizedHeadline.includes("We're building faster (No image)");
+  const isCloudNoLogo = isCloud && normalizedHeadline.includes("(No image)");
   const isCenteredLayout = isCloudNoLogo && selectedFormat !== '16:9';
   const headlineLen = currentHeadline.length;
 
@@ -221,7 +221,7 @@ export default function SocialAssetGenerator() {
 
   const ctaPlacementClass = [
     'absolute z-10 w-auto inline-flex items-center pointer-events-none transition-all duration-300 ease-in-out',
-    isCenteredLayout ? 'left-1/2 -translate-x-1/2' : isCloudNoLogo && selectedFormat === '16:9' ? 'right-12 sm:right-16 md:right-20' : 'left-7 sm:left-9 md:left-10',
+    isCenteredLayout ? 'left-1/2 -translate-x-1/2' : (isCloudNoLogo && selectedFormat === '16:9') ? 'right-12 sm:right-16 md:right-20' : 'left-7 sm:left-9 md:left-10',
     selectedFormat === '16:9'
       ? 'bottom-3.5 sm:bottom-4 md:bottom-5 scale-[0.70] origin-bottom-left'
       : selectedFormat === '9:16'
@@ -230,8 +230,8 @@ export default function SocialAssetGenerator() {
   ].filter(Boolean).join(' ');
 
   const copyPlacementClass = [
-    'absolute z-10 pointer-events-none transition-all duration-300 ease-in-out',
-    isCenteredLayout ? 'left-1/2 -translate-x-1/2 text-center w-full px-8' : 'left-7 sm:left-9 md:left-10 text-left',
+    'absolute z-10 pointer-events-none transition-all duration-300 ease-in-out text-left',
+    'left-7 sm:left-9 md:left-10',
     selectedFormat === '16:9'
       ? 'top-[28%] sm:top-[30%] max-w-[62%] sm:max-w-[65%]'
       : selectedFormat === '9:16'
@@ -253,9 +253,18 @@ export default function SocialAssetGenerator() {
 
   const currentAssetSrc = selectedCohort.assets[assetType as keyof typeof selectedCohort.assets];
 
-  const forumTransform = selectedCohort.id === 'forum' ? 'translate(25%, -25%) scale(2.2)' : 'none';
-  const cloudTransform = selectedCohort.id === 'cloud' ? 'translate(-12%, 0) scale(1.25)' : 'none';
-  const activeTransform = selectedCohort.id === 'forum' ? forumTransform : selectedCohort.id === 'cloud' ? cloudTransform : 'none';
+  const getActiveTransform = () => {
+    if (selectedCohort.id === 'forum') return 'translate(25%, -25%) scale(2.2)';
+    if (selectedCohort.id === 'cloud') {
+      if (selectedFormat === '16:9') return 'translate(-20%, 0) scale(1.4)';
+      if (selectedFormat === '1:1') return 'translate(-10%, 0) scale(1.3)';
+      if (selectedFormat === '4:5') return 'translate(10%, 0) scale(1.3)';
+      if (selectedFormat === '9:16') return 'translate(15%, 0) scale(1.4)';
+    }
+    if (selectedCohort.id === 'accelerator') return 'translate(25%, 25%) scale(1.5)';
+    return 'none';
+  };
+  const activeTransform = getActiveTransform();
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -375,6 +384,46 @@ export default function SocialAssetGenerator() {
         }
       }
 
+      const drawCoverBg = (ctx: CanvasRenderingContext2D, img: HTMLImageElement | HTMLVideoElement, exportW: number, exportH: number, cohortId: string, format: string) => {
+        const imgW = (img as HTMLVideoElement).videoWidth || (img as HTMLImageElement).width;
+        const imgH = (img as HTMLVideoElement).videoHeight || (img as HTMLImageElement).height;
+        const imgAspect = imgW / imgH;
+        const canvasAspect = exportW / exportH;
+        
+        let drawW, drawH;
+        if (imgAspect > canvasAspect) {
+            drawH = exportH;
+            drawW = exportH * imgAspect;
+        } else {
+            drawW = exportW;
+            drawH = exportW / imgAspect;
+        }
+        
+        const cx = (exportW - drawW) / 2;
+        const cy = (exportH - drawH) / 2;
+        
+        let tx = 0, ty = 0, scale = 1.0;
+        
+        if (cohortId === 'forum') {
+            tx = 0.25; ty = -0.25; scale = 2.2;
+        } else if (cohortId === 'cloud') {
+            if (format === '16:9') { tx = -0.20; ty = 0; scale = 1.4; }
+            else if (format === '1:1') { tx = -0.10; ty = 0; scale = 1.3; }
+            else if (format === '4:5') { tx = 0.10; ty = 0; scale = 1.3; }
+            else if (format === '9:16') { tx = 0.15; ty = 0; scale = 1.4; }
+        } else if (cohortId === 'accelerator') {
+            tx = 0.25; ty = 0.25; scale = 1.5;
+        }
+        
+        const scaledW = drawW * scale;
+        const scaledH = drawH * scale;
+        
+        const finalX = cx - (scaledW - drawW) / 2 + (exportW * tx);
+        const finalY = cy - (scaledH - drawH) / 2 + (exportH * ty);
+        
+        ctx.drawImage(img, finalX, finalY, scaledW, scaledH);
+      };
+
       const stream = canvas.captureStream(30);
       let mimeType = 'video/webm;codecs=vp9';
       if (!MediaRecorder.isTypeSupported(mimeType)) {
@@ -412,50 +461,11 @@ export default function SocialAssetGenerator() {
         const liveVideo = videoElementRef.current;
         if (assetType === 'motion' && liveVideo && !liveVideo.paused && liveVideo.readyState >= 2) {
           ctx.save();
-          if (selectedCohort.id === 'forum') {
-            const focalX = exportWidth * 0.75;
-            const focalY = exportHeight * 0.25;
-            ctx.translate(focalX, focalY);
-            ctx.scale(2.2, 2.2);
-            ctx.drawImage(liveVideo, -liveVideo.videoWidth / 2, -liveVideo.videoHeight / 2);
-          } else if (selectedCohort.id === 'cloud') {
-            ctx.translate(-exportWidth * 0.12, 0);
-            ctx.scale(1.25, 1.25);
-            ctx.drawImage(liveVideo, 0, 0, liveVideo.videoWidth, liveVideo.videoHeight);
-          } else {
-            ctx.translate(exportWidth, exportHeight);
-            ctx.scale(1.5, 1.5);
-            ctx.drawImage(liveVideo, -liveVideo.videoWidth, -liveVideo.videoHeight);
-          }
+          drawCoverBg(ctx, liveVideo, exportWidth, exportHeight, selectedCohort.id, selectedFormat);
           ctx.restore();
         } else if (assetType !== 'motion' && bgImg) {
           ctx.save();
-          if (selectedCohort.id === 'forum') {
-            const focalX = exportWidth * 0.75;
-            const focalY = exportHeight * 0.25;
-            ctx.translate(focalX, focalY);
-            ctx.scale(2.2, 2.2);
-            
-            const imgAspect = bgImg.width / bgImg.height;
-            const canvasAspect = exportWidth / exportHeight;
-            let drawW = exportWidth;
-            let drawH = exportHeight;
-            if (imgAspect > canvasAspect) {
-                drawH = exportHeight;
-                drawW = exportHeight * imgAspect;
-            } else {
-                drawW = exportWidth;
-                drawH = exportWidth / imgAspect;
-            }
-            ctx.drawImage(bgImg, -drawW / 2, -drawH / 2, drawW, drawH);
-          } else if (selectedCohort.id === 'cloud') {
-            ctx.translate(-exportWidth * 0.12, 0);
-            ctx.scale(1.25, 1.25);
-            ctx.drawImage(bgImg, 0, 0, exportWidth, exportHeight);
-          } else {
-            ctx.scale(1.5, 1.5);
-            ctx.drawImage(bgImg, -exportWidth * 0.5, -exportHeight * 0.5, exportWidth, exportHeight);
-          }
+          drawCoverBg(ctx, bgImg, exportWidth, exportHeight, selectedCohort.id, selectedFormat);
           ctx.restore();
         } else {
           drawProceduralMomentum(ctx, selectedCohort.id, exportWidth, exportHeight, t);
@@ -471,25 +481,26 @@ export default function SocialAssetGenerator() {
         const lockupScale = (isForum && selectedFormat === '16:9') ? 0.825 : (isForum && selectedFormat === '9:16') ? 0.94 : shouldReduceLogoLockup ? 0.8 : 1.0;
         const logoH = Math.round(46 * lockupScale);
         
-        let logoX = 80;
+        const textX = 80;
+        const logoX = isCenteredLayout ? (exportWidth / 2) : textX;
         const logoY = (isForum && selectedFormat === '16:9') ? 74 : (isForum && selectedFormat === '9:16') ? 48 : 80;
         
-        const actualLogoX = isCenteredLayout ? (exportWidth / 2) : logoX;
+        const actualLogoX = isCenteredLayout ? logoX - (Math.round(85 * lockupScale) / 2) : logoX;
         
         if (logoImg) {
           const logoAspect = logoImg.width / logoImg.height;
           const logoW = logoH * logoAspect;
-          ctx.drawImage(logoImg, isCenteredLayout ? actualLogoX - (logoW/2) : actualLogoX, logoY, logoW, logoH);
+          ctx.drawImage(logoImg, isCenteredLayout ? logoX - (logoW/2) : logoX, logoY, logoW, logoH);
         } else {
-          drawFallbackLogo(ctx, isCenteredLayout ? actualLogoX - (Math.round(85 * lockupScale)/2) : actualLogoX, logoY, lockupScale);
+          drawFallbackLogo(ctx, actualLogoX, logoY, lockupScale);
         }
 
-        const programGap = (isForum && selectedFormat === '16:9') ? 26 : isForum ? 30 : Math.round(56 * lockupScale);
+        const programGap = (isForum && selectedFormat === '16:9') ? 26 : isForum ? 30 : Math.round(logoH * 1.3);
         const programY = logoY + logoH + programGap;
         ctx.fillStyle = '#FFFFFF';
         ctx.font = `500 ${Math.round(56 * lockupScale)}px "Google Sans Flex", sans-serif`;
         ctx.textAlign = isCenteredLayout ? 'center' : 'left';
-        ctx.fillText(selectedCohort.name, actualLogoX, programY);
+        ctx.fillText(selectedCohort.name, logoX, programY);
 
         const baseCanvasHeadlineSize = selectedFormat === '16:9' ? 64 : 88;
         const canvasHeadlineSize = Math.round(baseCanvasHeadlineSize * headlineScale);
@@ -513,24 +524,22 @@ export default function SocialAssetGenerator() {
         ctx.fillStyle = '#FFFFFF';
         
         if (isCloudNoLogo) {
-            // "We're building" -> Normal size
+            ctx.textAlign = 'left';
             ctx.font = `500 ${canvasHeadlineSize}px "Google Sans Flex", sans-serif`;
-            ctx.fillText("We're building", actualLogoX, mainCopyY);
+            ctx.fillText("We're building", textX, mainCopyY);
             
-            // "faster" -> 2.2x scale, tighter line gap
             const fasterSize = canvasHeadlineSize * 2.2;
             ctx.font = `500 ${fasterSize}px "Google Sans Flex", sans-serif`;
-            const fasterX = isCenteredLayout ? actualLogoX : actualLogoX + (exportWidth * 0.12);
-            ctx.fillText("faster", fasterX, mainCopyY + (fasterSize * 0.85));
+            const fasterX = textX + (exportWidth * 0.15);
+            ctx.fillText("faster", fasterX, mainCopyY + (fasterSize * 0.82));
         } else {
+            ctx.textAlign = 'left';
             ctx.font = `500 ${canvasHeadlineSize}px "Google Sans Flex", sans-serif`;
             const maxWidth = exportWidth * (
               isForum && selectedFormat === '16:9'
                 ? 0.60
                 : selectedFormat === '16:9'
                 ? 0.62
-                : isCenteredLayout
-                ? 0.90
                 : 0.82
             );
             const rawLines = headlineToRender.split('\n');
@@ -544,14 +553,14 @@ export default function SocialAssetGenerator() {
                 const testLine = line + words[n] + ' ';
                 const metrics = ctx.measureText(testLine);
                 if (metrics.width > maxWidth && n > 0) {
-                  ctx.fillText(line, actualLogoX, currentY);
+                  ctx.fillText(line, textX, currentY);
                   line = words[n] + ' ';
                   currentY += lineWrapStep;
                 } else {
                   line = testLine;
                 }
               }
-              ctx.fillText(line, actualLogoX, currentY);
+              ctx.fillText(line, textX, currentY);
               currentY += lineWrapStep;
             }
         }
@@ -566,12 +575,13 @@ export default function SocialAssetGenerator() {
             : 40;
             
           const suppY = isCloudNoLogo 
-            ? mainCopyY + (canvasHeadlineSize * 2.2 * 0.85) + 60 
+            ? mainCopyY + (canvasHeadlineSize * 2.2 * 0.82) + 60 
             : mainCopyY + (canvasHeadlineSize * 1.15) * headlineToRender.split('\n').length;
             
           ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+          ctx.textAlign = 'left';
           ctx.font = `500 ${supportingFontSize}px "Google Sans Flex", sans-serif`;
-          ctx.fillText(currentSupportingText, actualLogoX, suppY);
+          ctx.fillText(currentSupportingText, textX, suppY);
         }
 
         if (userImg && !isCloudNoLogo) {
@@ -682,10 +692,10 @@ export default function SocialAssetGenerator() {
           ? exportHeight - 220
           : exportHeight - Math.round(120 * ctaScale);
 
-        if (isCenteredLayout) {
-          ctaX = (exportWidth / 2) - (pillW / 2);
-        } else if (isCloudNoLogo && selectedFormat === '16:9') {
+        if (isCloudNoLogo && selectedFormat === '16:9') {
           ctaX = exportWidth - pillW - 120;
+        } else if (isCenteredLayout) {
+          ctaX = (exportWidth / 2) - (pillW / 2);
         }
 
         ctx.save();
@@ -865,7 +875,12 @@ export default function SocialAssetGenerator() {
                     }
                   }}
                 />
-                <p className={`${(isForum && selectedFormat === '16:9') ? 'mt-3 sm:mt-[14px] text-[20px] sm:text-[22px] md:text-[26px]' : (isForum && selectedFormat === '9:16') ? 'mt-3.5 sm:mt-4 text-xl sm:text-2xl md:text-[28px]' : isForum ? 'mt-4 sm:mt-5 text-xl sm:text-2xl md:text-[28px]' : 'mt-8 text-xl sm:text-2xl md:text-[28px]'} text-white font-medium tracking-tight leading-tight ${isCenteredLayout ? 'text-center' : 'text-left'} transition-all duration-300`}>
+                <p className={`${
+                   (isForum && selectedFormat === '16:9') ? 'mt-3 sm:mt-4 text-[20px] sm:text-[22px] md:text-[26px]' 
+                   : (isForum && selectedFormat === '9:16') ? 'mt-3.5 sm:mt-4 text-xl sm:text-2xl md:text-[28px]' 
+                   : isForum ? 'mt-4 sm:mt-5 text-xl sm:text-2xl md:text-[28px]' 
+                   : 'mt-5 sm:mt-6 md:mt-7 text-xl sm:text-2xl md:text-[28px]'
+                } text-white font-medium tracking-tight leading-tight transition-all duration-300`}>
                   {selectedCohort.name}
                 </p>
 
@@ -904,16 +919,16 @@ export default function SocialAssetGenerator() {
               {!isForum && (
                 <div className={copyPlacementClass}>
                   {isCloudNoLogo ? (
-                    <div className={`text-white font-medium drop-shadow-sm transition-all duration-300 ${isCenteredLayout ? 'text-center w-full' : 'text-left'}`}>
-                      <div style={{ fontSize: `calc(var(--base-size) * ${headlineScale})`, lineHeight: 1.04, tracking: 'tight' }}>
+                    <div className={`text-white font-medium drop-shadow-sm transition-all duration-300 text-left`}>
+                      <div style={{ fontSize: `calc(var(--base-size) * ${headlineScale})`, lineHeight: 1.04, letterSpacing: '-0.02em' }}>
                         We're building
                       </div>
                       <div style={{ 
                         fontSize: `calc(var(--base-size) * ${headlineScale} * 2.2)`, 
-                        lineHeight: 0.9, 
-                        marginLeft: isCenteredLayout ? '0' : '10%',
-                        marginTop: '4px',
-                        tracking: 'tight' 
+                        lineHeight: 0.85, 
+                        marginLeft: '15%',
+                        marginTop: '6px',
+                        letterSpacing: '-0.03em' 
                       }}>
                         faster
                       </div>
@@ -924,7 +939,7 @@ export default function SocialAssetGenerator() {
                         '--base-size': `${baseSizeRem}rem`,
                         fontSize: `calc(var(--base-size) * ${headlineScale})`,
                       } as React.CSSProperties}
-                      className={`text-white font-medium ${headlineClass} leading-[1.04] tracking-tight drop-shadow-sm transition-all duration-300 ${isCenteredLayout ? 'text-center' : 'text-left'}`}
+                      className={`text-white font-medium ${headlineClass} leading-[1.04] tracking-tight drop-shadow-sm transition-all duration-300 text-left`}
                     >
                       {headlineToRender.split('\n').map((line, i) => (
                           <span key={i} className="block whitespace-nowrap">{line}</span>
@@ -933,7 +948,7 @@ export default function SocialAssetGenerator() {
                   )}
 
                   {currentSupportingText && !isCloudNoLogo && (
-                    <p className={`mt-2.5 sm:mt-3 text-white/90 font-medium ${supportingTextSizeClass} leading-snug tracking-normal drop-shadow-sm transition-all duration-300 ${isCenteredLayout ? 'text-center' : 'text-left'}`}>
+                    <p className={`mt-2.5 sm:mt-3 text-white/90 font-medium ${supportingTextSizeClass} leading-snug tracking-normal drop-shadow-sm transition-all duration-300 text-left`}>
                       {currentSupportingText}
                     </p>
                   )}
