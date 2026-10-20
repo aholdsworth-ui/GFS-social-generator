@@ -97,14 +97,18 @@ export default function SocialAssetGenerator() {
 
   if (selectedFormat === '16:9') {
     if (isForum) headlineScale = normalizedHeadline.includes('Connecting with experts') ? 1.08 : 1.2;
+    else if (isCloud) headlineScale = isCloudNoImage ? 1.4 : 1.44;
     else if (isAccelerator) headlineScale = headlineLen <= 13 ? 1.575 : 0.96;
   } else if (selectedFormat === '9:16') {
     if (isForum) headlineScale = 0.9;
+    else if (isCloud) headlineScale = isCloudNoImage ? 0.9 : 1.2;
     else if (isAccelerator) headlineScale = headlineLen <= 13 ? 0.8 : 0.64;
   } else if (selectedFormat === '1:1') {
-    if (isAccelerator) headlineScale = headlineLen <= 13 ? 1.0 : 0.704;
+    if (isCloud) headlineScale = isCloudNoImage ? 1.05 : 1.2;
+    else if (isAccelerator) headlineScale = headlineLen <= 13 ? 1.0 : 0.704;
   } else {
-    if (isAccelerator) headlineScale = headlineLen <= 13 ? 1.0 : 0.8;
+    if (isCloud) headlineScale = isCloudNoImage ? 1.05 : 1.2;
+    else if (isAccelerator) headlineScale = headlineLen <= 13 ? 1.0 : 0.8;
   }
 
   const headlineClass = `text-[calc(var(--base-size)*${headlineScale})]`;
@@ -146,9 +150,10 @@ export default function SocialAssetGenerator() {
   let uploadScale = 1.0;
   if (selectedFormat === '16:9') {
     if (isForum16to9) uploadScale = 1.0;
+    else if (isCloud) uploadScale = 0.85; 
     else if (isAccelerator && headlineLen <= 13) uploadScale = 0.90;
   } else if (selectedFormat === '9:16') {
-    if (isForum || isAccelerator) uploadScale = 0.75;
+    if (isForum || isCloud || isAccelerator) uploadScale = 0.75;
   }
 
   const uploadScaleClass = uploadScale === 0.75 ? 'scale-75 origin-bottom-right' : uploadScale === 0.85 ? 'scale-[0.85] origin-bottom-right' : uploadScale === 0.90 ? 'scale-90 origin-bottom-right' : 'scale-100 origin-bottom-right';
@@ -192,9 +197,12 @@ export default function SocialAssetGenerator() {
      mediaStyle.transform = 'translate(25%, 25%) scale(1.5)';
   } else if (selectedCohort.id === 'cloud') {
      if (selectedFormat === '16:9') {
-         mediaStyle.transform = 'scaleX(-1)';
+         mediaStyle.transform = 'scaleX(-1) scale(1.15)';
+         mediaStyle.transformOrigin = 'center center';
      } else {
          mediaStyle.objectPosition = 'right center';
+         mediaStyle.transform = 'scale(1.15)';
+         mediaStyle.transformOrigin = 'right center';
      }
   }
 
@@ -302,15 +310,13 @@ export default function SocialAssetGenerator() {
           ctx.drawImage(media, -dw/2, -dh/2, dw, dh);
         } else if (selectedCohort.id === 'cloud') {
           if (selectedFormat === '16:9') {
-              ctx.translate(exportWidth, 0);
-              ctx.scale(-1, 1);
-              const cx = (exportWidth - dw) / 2;
-              const cy = (exportHeight - dh) / 2;
-              ctx.drawImage(media, cx, cy, dw, dh);
+              ctx.translate(exportWidth/2, exportHeight/2);
+              ctx.scale(-1.15, 1.15); 
+              ctx.drawImage(media, -dw/2, -dh/2, dw, dh);
           } else {
-              const tx = exportWidth - dw; // Align right
-              const ty = (exportHeight - dh) / 2;
-              ctx.drawImage(media, tx, ty, dw, dh);
+              ctx.translate(exportWidth, exportHeight/2);
+              ctx.scale(1.15, 1.15);
+              ctx.drawImage(media, -dw, -dh/2, dw, dh); // Anchored to the right side
           }
         } else {
           const cx = (exportWidth - dw) / 2;
@@ -359,94 +365,60 @@ export default function SocialAssetGenerator() {
         ctx.fillStyle = vignette;
         ctx.fillRect(0, 0, exportWidth, exportHeight);
 
+        const lockupScale = (isForum && selectedFormat === '16:9') ? 0.825 : (isForum && selectedFormat === '9:16') ? 0.94 : shouldReduceLogoLockup ? 0.85 : 1.0;
+        const logoH = Math.round(36 * lockupScale);
+        
+        const baseX = selectedFormat === '16:9' ? exportWidth * 0.0625 : exportWidth * 0.074;
+        const logoY = (isForum && selectedFormat === '16:9') ? 74 : (isForum && selectedFormat === '9:16') ? 48 : (isCloudNoImage && selectedFormat === '9:16') ? 110 : 80;
+        
+        if (logoImg) {
+          const logoAspect = logoImg.width / logoImg.height;
+          const logoW = logoH * logoAspect;
+          ctx.drawImage(logoImg, baseX, logoY, logoW, logoH);
+        } else {
+          drawFallbackLogo(ctx, baseX, logoY, lockupScale);
+        }
+
+        const programGap = (isForum && selectedFormat === '16:9') ? 26 : isForum ? 30 : Math.round(logoH * 2);
+        const programY = logoY + logoH + programGap;
+        
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = `500 ${Math.round(48 * lockupScale)}px "Google Sans Flex", sans-serif`;
+        ctx.textAlign = 'left';
+        ctx.fillText(selectedCohort.name, baseX, programY);
+
+        let mainCopyY: number;
+        if (isForum) {
+          const topClearance = isConnectingExperts16to9 ? Math.round(10 * 1.0) : (selectedFormat === '16:9') ? Math.round(110 * 1.0) : 210; 
+          mainCopyY = programY + topClearance;
+        } else if (isCloudNoImage) {
+          mainCopyY = selectedFormat === '16:9' ? exportHeight * 0.40 : selectedFormat === '9:16' ? exportHeight * 0.36 : exportHeight * 0.36;
+        } else {
+          mainCopyY = selectedFormat === '16:9' ? exportHeight * 0.32 : selectedFormat === '9:16' ? exportHeight * 0.22 : exportHeight * 0.35;
+        }
+
+        ctx.fillStyle = '#FFFFFF';
+        const baseCanvasHeadlineSize = selectedFormat === '16:9' ? 64 : 88;
+        const canvasHeadlineSize = Math.round(baseCanvasHeadlineSize * headlineScale);
+
         if (isCloudNoImage) {
-          const isLandscape = selectedFormat === '16:9';
-          const baseX = exportWidth * (isLandscape ? 0.0625 : 0.074);
-          const logoY = exportHeight * (isLandscape ? 0.12 : 0.10);
-          const logoH = exportWidth * (isLandscape ? 0.045 : 0.075);
-          
-          if (logoImg) {
-            const logoW = logoH * (logoImg.width / logoImg.height);
-            ctx.drawImage(logoImg, baseX, logoY, logoW, logoH);
-          } else {
-            drawFallbackLogo(ctx, baseX, logoY, 1.0);
-          }
-
-          const programGap = exportWidth * (isLandscape ? 0.025 : 0.045);
-          ctx.fillStyle = '#FFFFFF';
-          ctx.font = `500 ${Math.round(exportWidth * (isLandscape ? 0.028 : 0.048))}px "Google Sans Flex", sans-serif`;
           ctx.textAlign = 'left';
-          ctx.fillText(selectedCohort.name, baseX, logoY + logoH + programGap + (exportWidth * 0.028));
-
-          const mainCopyY = exportHeight * (isLandscape ? 0.44 : 0.38);
-          const buildSize = exportWidth * (isLandscape ? 0.0625 : 0.13);
-          const fasterSize = exportWidth * (isLandscape ? 0.14 : 0.32);
-
+          const isLandscape = selectedFormat === '16:9';
+          
+          const buildSize = isLandscape ? exportWidth * 0.055 : exportWidth * 0.12;
+          const fasterSize = buildSize * 1.6;
+          
           ctx.font = `500 ${Math.round(buildSize)}px "Google Sans Flex", sans-serif`;
-          ctx.fillText("We're building", baseX, mainCopyY + buildSize);
+          ctx.fillText("We're building", baseX, mainCopyY);
+
+          // Get exact width of "We're " to set the indent dynamically
+          const wereWidth = ctx.measureText("We're ").width;
+          const fasterOffsetX = isLandscape ? baseX + (wereWidth * 1.1) : baseX;
 
           ctx.font = `500 ${Math.round(fasterSize)}px "Google Sans Flex", sans-serif`;
-          const fasterOffsetX = baseX + (isLandscape ? exportWidth * 0.15 : 0);
-          ctx.fillText("faster", fasterOffsetX, mainCopyY + buildSize + (fasterSize * 0.85));
-
-          const pillH = exportWidth * (isLandscape ? 0.035 : 0.06);
-          const pillW = pillH * 4.2;
-          let ctaX = baseX;
-          let ctaY = exportHeight * 0.89 - pillH;
-
-          if (isLandscape) {
-            ctaX = exportWidth * 0.94 - pillW;
-            ctaY = exportHeight * 0.92 - pillH;
-          }
-
-          ctx.beginPath();
-          ctx.roundRect(ctaX, ctaY, pillW, pillH, pillH / 2);
-          ctx.fillStyle = 'rgba(18, 19, 23, 0.6)';
-          ctx.fill();
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-          ctx.lineWidth = 2;
-          ctx.stroke();
-
-          ctx.fillStyle = '#FFFFFF';
-          ctx.font = `500 ${Math.round(pillH * 0.4)}px "Google Sans Flex", sans-serif`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText('Find out more', ctaX + pillW / 2, ctaY + pillH / 2);
-
-        } else {
-          // Standard Export
-          const lockupScale = (isForum && selectedFormat === '16:9') ? 0.825 : (isForum && selectedFormat === '9:16') ? 0.94 : shouldReduceLogoLockup ? 0.85 : 1.0;
-          const logoH = Math.round(36 * lockupScale);
-          const textX = 80;
-          const logoY = (isForum && selectedFormat === '16:9') ? 74 : (isForum && selectedFormat === '9:16') ? 48 : 80;
+          ctx.fillText("faster", fasterOffsetX, mainCopyY + Math.round(fasterSize * 0.85));
           
-          if (logoImg) {
-            const logoAspect = logoImg.width / logoImg.height;
-            const logoW = logoH * logoAspect;
-            ctx.drawImage(logoImg, textX, logoY, logoW, logoH);
-          } else {
-            drawFallbackLogo(ctx, textX, logoY, lockupScale);
-          }
-
-          const programGap = (isForum && selectedFormat === '16:9') ? 26 : isForum ? 30 : Math.round(logoH * 2);
-          const programY = logoY + logoH + programGap;
-          ctx.fillStyle = '#FFFFFF';
-          ctx.font = `500 ${Math.round(48 * lockupScale)}px "Google Sans Flex", sans-serif`;
-          ctx.textAlign = 'left';
-          ctx.fillText(selectedCohort.name, textX, programY);
-
-          let mainCopyY: number;
-          if (isForum) {
-            const topClearance = isConnectingExperts16to9 ? Math.round(10 * 1.0) : (selectedFormat === '16:9') ? Math.round(110 * 1.0) : 210; 
-            mainCopyY = programY + topClearance;
-          } else {
-            mainCopyY = selectedFormat === '16:9' ? exportHeight * 0.32 : selectedFormat === '9:16' ? exportHeight * 0.22 : exportHeight * 0.35;
-          }
-
-          ctx.fillStyle = '#FFFFFF';
-          const baseCanvasHeadlineSize = selectedFormat === '16:9' ? 64 : 88;
-          const canvasHeadlineSize = Math.round(baseCanvasHeadlineSize * headlineScale);
-
+        } else {
           ctx.textAlign = 'left';
           ctx.font = `500 ${canvasHeadlineSize}px "Google Sans Flex", sans-serif`;
           const maxWidth = exportWidth * (isForum && selectedFormat === '16:9' ? 0.60 : selectedFormat === '16:9' ? 0.62 : 0.82);
@@ -461,46 +433,102 @@ export default function SocialAssetGenerator() {
               const testLine = line + words[n] + ' ';
               const metrics = ctx.measureText(testLine);
               if (metrics.width > maxWidth && n > 0) {
-                ctx.fillText(line, textX, currentY);
+                ctx.fillText(line, baseX, currentY);
                 line = words[n] + ' ';
                 currentY += lineWrapStep;
               } else {
                 line = testLine;
               }
             }
-            ctx.fillText(line, textX, currentY);
+            ctx.fillText(line, baseX, currentY);
             currentY += lineWrapStep;
           }
+        }
 
-          if (currentSupportingText && !isCloudNoImage) {
-            const supportingFontSize = selectedFormat === '16:9' ? 30 : isForum9to16 ? 28 : isAcc9to16 ? 32 : 40;
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-            ctx.textAlign = 'left';
-            ctx.font = `500 ${supportingFontSize}px "Google Sans Flex", sans-serif`;
-            ctx.fillText(currentSupportingText, textX, mainCopyY + (canvasHeadlineSize * 1.15) * headlineToRender.split('\n').length + 12);
+        if (currentSupportingText && !isCloudNoImage) {
+          const supportingFontSize = selectedFormat === '16:9' ? 30 : isForum9to16 ? 28 : isAcc9to16 ? 32 : 40;
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+          ctx.textAlign = 'left';
+          ctx.font = `500 ${supportingFontSize}px "Google Sans Flex", sans-serif`;
+          ctx.fillText(currentSupportingText, baseX, mainCopyY + (canvasHeadlineSize * 1.15) * headlineToRender.split('\n').length + 12);
+        }
+
+        if (userImg && !isCloudNoImage) {
+          let userW = 351; let userH = 439;
+          let userX = exportWidth - userW - 28; let userY = exportHeight - userH - 28;
+
+          if (isForum16to9) {
+            userH = Math.round(exportHeight * 0.75); userW = Math.round(userH * 4 / 5);
+            userX = exportWidth - userW - 32; userY = exportHeight - userH - 32;
+          } else if (selectedFormat === '1:1') {
+            userW = 351; userH = 351;
+            userX = exportWidth - userW - 28; userY = exportHeight - userH - 28;
+          } else if (selectedFormat === '16:9') {
+            userW = 460; userH = Math.round(userW * 9 / 16); 
+            userX = exportWidth - userW - 32; userY = exportHeight - userH - 32;
+          } else if (selectedFormat === '9:16') {
+            userW = Math.round(351 * 1.25); userH = uploadType === 'logo' ? userW : Math.round(userW * 5 / 4);
+            userX = exportWidth - userW - 32; userY = exportHeight - userH - 180; 
           }
 
-          const ctaScale = (selectedFormat === '16:9' || selectedFormat === '9:16') ? 0.75 : 1.0;
-          const pillW = Math.round(240 * ctaScale);
-          const pillH = Math.round(56 * ctaScale);
-          
-          let ctaX = textX;
-          let ctaY = selectedFormat === '9:16' ? exportHeight - 220 : exportHeight - Math.round(120 * ctaScale);
+          if (uploadScale !== 1.0) {
+            const origW = userW; const origH = userH;
+            userW = Math.round(userW * uploadScale); userH = Math.round(userH * uploadScale);
+            userX += (origW - userW); userY += (origH - userH); 
+          }
 
           ctx.save();
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+          ctx.shadowBlur = 24;
           ctx.beginPath();
-          ctx.roundRect(ctaX, ctaY, pillW, pillH, pillH / 2);
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-          ctx.lineWidth = 1.5;
-          ctx.stroke();
+          ctx.roundRect(userX, userY, userW, userH, 28);
 
-          ctx.fillStyle = '#FFFFFF';
-          ctx.font = `500 ${Math.round(22 * ctaScale)}px "Google Sans Flex", sans-serif`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText('Find out more', ctaX + pillW / 2, ctaY + pillH / 2);
+          if (uploadType === 'logo') {
+            ctx.fillStyle = '#FFFFFF'; ctx.fill(); ctx.shadowBlur = 0; ctx.clip();
+            const pad = 36; const innerW = userW - pad * 2; const innerH = userH - pad * 2;
+            const imgAspect = userImg.width / userImg.height; const innerAspect = innerW / innerH;
+            let drawW = innerW; let drawH = innerH;
+            if (imgAspect > innerAspect) { drawW = innerW; drawH = innerW / imgAspect; }
+            else { drawH = innerH; drawW = innerH * imgAspect; }
+            ctx.drawImage(userImg, userX + pad + (innerW - drawW) / 2, userY + pad + (innerH - drawH) / 2, drawW, drawH);
+          } else {
+            ctx.shadowBlur = 0; ctx.clip();
+            const imgAspect = userImg.width / userImg.height; const containerAspect = userW / userH;
+            let drawW = userW; let drawH = userH;
+            if (imgAspect > containerAspect) { drawH = userH; drawW = userH * imgAspect; }
+            else { drawW = userW; drawH = userW / imgAspect; }
+            ctx.drawImage(userImg, userX + (userW - drawW) / 2, userY + (userH - drawH) / 2, drawW, drawH);
+          }
           ctx.restore();
         }
+
+        const ctaScale = (selectedFormat === '16:9' || selectedFormat === '9:16') ? 0.75 : 1.0;
+        const pillW = Math.round(240 * ctaScale);
+        const pillH = Math.round(56 * ctaScale);
+        
+        let ctaX = baseX;
+        let ctaY = selectedFormat === '9:16' ? exportHeight - 220 : exportHeight - Math.round(120 * ctaScale);
+
+        if (isCloudNoImage && selectedFormat === '16:9') {
+          ctaX = exportWidth - pillW - 120;
+          ctaY = exportHeight - pillH - 80;
+        }
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.roundRect(ctaX, ctaY, pillW, pillH, pillH / 2);
+        ctx.fillStyle = 'rgba(18, 19, 23, 0.8)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = `500 ${Math.round(22 * ctaScale)}px "Google Sans Flex", sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Find out more', ctaX + pillW / 2, ctaY + pillH / 2);
+        ctx.restore();
 
         if (elapsed < durationMs) animId = requestAnimationFrame(renderRecordingFrame);
         else recorder.stop();
@@ -633,73 +661,39 @@ export default function SocialAssetGenerator() {
               </div>
 
               {isCloudNoImage ? (
-                <div className="absolute inset-0 z-10 pointer-events-none">
+                <div className="absolute inset-0 z-10 pointer-events-none p-7 sm:p-9 md:p-10">
                   
-                  {/* Logo Lockup */}
-                  <div style={{
-                    position: 'absolute',
-                    top: selectedFormat === '16:9' ? '12%' : '10%',
-                    left: selectedFormat === '16:9' ? '6.25%' : '7.4%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'flex-start'
-                  }}>
-                    <img src="/assets/gfs-logo-white.png" style={{ height: selectedFormat === '16:9' ? '4.5cqi' : '7.5cqi', width: 'auto' }} />
-                    <div style={{
-                      marginTop: selectedFormat === '16:9' ? '2.5cqi' : '4.5cqi',
-                      fontSize: selectedFormat === '16:9' ? '2.8cqi' : '4.8cqi',
-                      color: 'white',
-                      fontWeight: 500
-                    }}>
+                  {/* Left-Aligned Logo Lockup */}
+                  <div className="flex flex-col items-start">
+                    <img 
+                      src="/assets/gfs-logo-white.png" 
+                      alt="Google for Startups Logo"
+                      className={`${selectedFormat === '16:9' ? 'h-4 sm:h-5 md:h-6' : 'h-5 sm:h-6 md:h-7'} w-auto`}
+                    />
+                    {/* Fixed 2x G Spacing */}
+                    <div className={`${selectedFormat === '16:9' ? 'mt-6 sm:mt-8 md:mt-10 text-[18px] sm:text-[20px] md:text-[24px]' : 'mt-8 sm:mt-10 md:mt-12 text-[20px] sm:text-[24px] md:text-[28px]'} text-white font-medium`}>
                       {selectedCohort.name}
                     </div>
                   </div>
 
-                  {/* Headlines Container - Forces No Wrap */}
-                  <div style={{
-                    position: 'absolute',
-                    top: selectedFormat === '16:9' ? '44%' : '38%',
-                    left: selectedFormat === '16:9' ? '6.25%' : '7.4%',
-                    whiteSpace: 'nowrap'
-                  }}>
-                    <div style={{
-                      fontSize: selectedFormat === '16:9' ? '6.25cqi' : '13cqi',
-                      lineHeight: 1.05,
-                      color: 'white',
-                      fontWeight: 500
-                    }}>
+                  {/* Standard Tailwind Copy Classes - No Wrapping */}
+                  <div className={`absolute left-7 sm:left-9 md:left-10 text-left whitespace-nowrap ${selectedFormat === '16:9' ? 'top-[40%]' : 'top-[36%]'}`}>
+                    <div className={`${selectedFormat === '16:9' ? 'text-[28px] sm:text-[36px] md:text-[42px]' : 'text-[40px] sm:text-[50px] md:text-[56px]'} text-white font-medium leading-[1.05]`}>
                       We're building
                     </div>
-                    <div style={{
-                      fontSize: selectedFormat === '16:9' ? '14cqi' : '32cqi',
-                      lineHeight: 0.85,
-                      marginTop: selectedFormat === '16:9' ? '1cqi' : '1.5cqi',
-                      marginLeft: selectedFormat === '16:9' ? '15cqi' : '0',
-                      color: 'white',
-                      fontWeight: 500
-                    }}>
+                    {/* Indented automatically for 16:9, flush left otherwise */}
+                    <div className={`${selectedFormat === '16:9' ? 'text-[50px] sm:text-[68px] md:text-[80px] ml-12 sm:ml-16 md:ml-24' : 'text-[64px] sm:text-[80px] md:text-[90px] ml-0'} text-white font-medium leading-[0.85] mt-1`}>
                       faster
                     </div>
                   </div>
 
-                  {/* CTA Pill */}
-                  <div style={{
-                    position: 'absolute',
-                    ...(selectedFormat === '16:9'
-                      ? { right: '6%', bottom: '8%' }
-                      : { left: '7.4%', bottom: '11%' }
-                    )
-                  }}>
-                     <div style={{
-                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                       padding: selectedFormat === '16:9' ? '1cqi 2cqi' : '1.5cqi 3cqi',
-                       borderRadius: '999px', border: '1.5px solid rgba(255,255,255,0.4)',
-                       backgroundColor: 'rgba(18, 19, 23, 0.6)', color: 'white',
-                       fontSize: selectedFormat === '16:9' ? '1.5cqi' : '2.5cqi', fontWeight: 500
-                     }}>
-                       Find out more
-                     </div>
+                  {/* Brand CTA Pill */}
+                  <div className={`absolute w-auto inline-flex items-center pointer-events-none ${selectedFormat === '16:9' ? 'right-10 sm:right-12 bottom-8 sm:bottom-10 scale-90 origin-bottom-right' : 'left-7 sm:left-9 md:left-10 bottom-16 sm:bottom-20 scale-[0.85] origin-bottom-left'}`}>
+                    <div className="px-5 py-2 sm:px-6 sm:py-2.5 rounded-full border border-white/40 bg-[#121317]/80 text-white font-medium text-xs sm:text-sm text-center">
+                      Find out more
+                    </div>
                   </div>
+
                 </div>
               ) : (
                 <>
@@ -787,10 +781,9 @@ export default function SocialAssetGenerator() {
                 </div>
               )}
 
-              {/* Standard format CTA Pill */}
               {!isCloudNoImage && (
                 <div className={ctaPlacementClass}>
-                  <div className="px-6 py-2.5 rounded-full border border-white/40 bg-[#121317]/60 text-white font-medium text-xs sm:text-sm text-center whitespace-nowrap font-['Google_Sans_Flex',sans-serif]">
+                  <div className="px-5 py-2 sm:px-6 sm:py-2.5 rounded-full border border-white/40 bg-[#121317]/80 text-white font-medium text-xs sm:text-sm text-center whitespace-nowrap font-['Google_Sans_Flex',sans-serif]">
                     Find out more
                   </div>
                 </div>
