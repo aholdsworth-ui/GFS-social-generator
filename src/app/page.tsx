@@ -381,7 +381,7 @@ export default function SocialAssetGenerator() {
         if (isCloudNoImage && selectedFormat === '9:16') {
           
           // 1. Logo & Program: Centered with 2x G Spacing
-          const logoH = 50;
+          const logoH = 46;
           const logoX = exportWidth / 2;
           const logoY = exportHeight * 0.10; 
           
@@ -395,12 +395,12 @@ export default function SocialAssetGenerator() {
           const programGap = logoH * 2;
           const programY = logoY + logoH + programGap;
           ctx.fillStyle = '#FFFFFF';
-          ctx.font = `500 56px "Google Sans Flex", sans-serif`;
+          ctx.font = `500 52px "Google Sans Flex", sans-serif`;
           ctx.textAlign = 'center';
-          ctx.fillText(selectedCohort.name, logoX, programY + 45); 
+          ctx.fillText(selectedCohort.name, logoX, programY + 35); 
 
-          // 2. Headline 1: ZERO padding edge-to-edge
-          const mainCopyY = exportHeight * 0.43;
+          // 2. Headline 1: True Edge-to-Edge flush with Canvas width
+          const mainCopyY = exportHeight * 0.45;
           const h1Text = "We’re building"; 
           
           ctx.font = `500 100px "Google Sans Flex", sans-serif`;
@@ -415,11 +415,11 @@ export default function SocialAssetGenerator() {
           const fasterSize = edgeToEdgeSize * 2.4; // Considerably larger
           ctx.font = `500 ${fasterSize}px "Google Sans Flex", sans-serif`;
           ctx.textAlign = 'right';
-          ctx.fillText("faster", exportWidth, mainCopyY + fasterSize * 0.82);
+          ctx.fillText("faster", exportWidth, mainCopyY + fasterSize * 0.85);
 
-          // 4. CTA Pill: Centered, base flush to 1/4 of total canvas (y = exportHeight * 0.75)
-          const pillH = 72;
-          const pillW = 300;
+          // 4. CTA Pill: Centered, smaller glassy asset, 1/4 from bottom (25%)
+          const pillH = 60;
+          const pillW = 280;
           const ctaX = (exportWidth / 2) - (pillW / 2);
           const ctaY = (exportHeight * 0.75) - pillH;
 
@@ -715,37 +715,36 @@ export default function SocialAssetGenerator() {
                 <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/35 pointer-events-none" />
               </div>
 
-              {/* --- ZERO-PADDING HTML PREVIEW FOR 9:16 CLOUD NO IMAGE --- */}
+              {/* --- SAFE TAILWIND HTML PREVIEW FOR 9:16 CLOUD NO IMAGE --- */}
               {isCloudNoImage && selectedFormat === '9:16' ? (
-                <div className="absolute inset-0 z-10 pointer-events-none p-0 flex flex-col">
+                <div className="absolute inset-0 z-10 pointer-events-none flex flex-col">
                   
                   {/* Centered Logo Lockup & 2x G Spacing */}
-                  <div className="absolute top-[10%] left-0 w-full flex flex-col items-center justify-start">
+                  <div className="absolute top-[10%] w-full flex flex-col items-center justify-start">
                     <img 
                       src="/assets/gfs-logo-white.png" 
                       alt="Google for Startups Logo"
-                      className="h-[2.6cqh] w-auto block"
+                      className="h-[22px] sm:h-[26px] w-auto block"
                     />
-                    <div className="text-white font-medium text-[3.2cqi] mt-[5.2cqh] tracking-normal">
+                    <div className="text-white font-medium text-[22px] sm:text-[26px] mt-[44px] sm:mt-[52px] tracking-normal">
                       {selectedCohort.name}
                     </div>
                   </div>
 
-                  {/* True Edge-to-Edge Typography Container with 0px padding */}
-                  <div className="absolute top-[42%] left-0 w-full flex flex-col tracking-normal">
-                    <div className="text-white font-medium text-center leading-none w-full tracking-normal whitespace-nowrap text-[13.6cqi]">
+                  {/* Edge-to-Edge Typography Container (Safe CSS Classes) */}
+                  <div className="absolute top-[42%] left-0 w-full flex flex-col tracking-normal px-2">
+                    <div className="text-white font-medium text-center leading-none w-full tracking-normal whitespace-nowrap text-[38px] sm:text-[42px] xl:text-[46px] px-0 mx-0">
                       We’re building
                     </div>
-                    {/* Flush right, large scale text dropping under apostrophe */}
-                    <div className="text-white font-medium text-right leading-[0.85] mt-1 w-full tracking-normal whitespace-nowrap text-[32cqi] pr-0">
+                    <div className="text-white font-medium text-right leading-[0.85] mt-1 w-full tracking-normal whitespace-nowrap text-[84px] sm:text-[96px] xl:text-[104px] pr-0">
                       faster
                     </div>
                   </div>
 
-                  {/* 1/4 Bottom CTA Pill (bottom: 25%) with loaded asset logic */}
-                  <div className="absolute left-1/2 -translate-x-1/2 bottom-[25%] w-auto inline-flex items-center justify-center min-w-[36cqi] h-[8.5cqi]">
+                  {/* 1/4 Bottom CTA Pill (bottom: 25%) */}
+                  <div className="absolute left-1/2 -translate-x-1/2 bottom-[25%] w-[180px] sm:w-[220px] h-[48px] sm:h-[56px] inline-flex items-center justify-center">
                     <img src="/assets/glassy-pill.png" className="absolute inset-0 w-full h-full object-fill rounded-full" onError={(e) => e.currentTarget.style.display='none'} />
-                    <div className="relative px-6 py-2.5 rounded-full border border-white/40 bg-[#121317]/40 backdrop-blur-sm text-white font-medium text-[1.8cqi] sm:text-[2cqi] text-center whitespace-nowrap w-full h-full flex items-center justify-center">
+                    <div className="relative px-6 py-2.5 rounded-full border border-white/40 bg-[#121317]/40 backdrop-blur-sm text-white font-medium text-[14px] sm:text-[16px] text-center whitespace-nowrap w-full h-full flex items-center justify-center">
                       Find out more
                     </div>
                   </div>
