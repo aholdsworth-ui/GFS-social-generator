@@ -197,8 +197,9 @@ export default function SocialAssetGenerator() {
      mediaStyle.transform = 'translate(25%, 25%) scale(1.5)';
   } else if (selectedCohort.id === 'cloud') {
      if (selectedFormat === '9:16') {
-         // Horizontally flipped and matched to the canvas crop logic
-         mediaStyle.transform = 'scaleX(-1) scale(1.5) translateX(15%)';
+         // Anchors original right edge to right boundary, then flips container to put it on left edge
+         mediaStyle.objectPosition = 'right center';
+         mediaStyle.transform = 'scaleX(-1)';
      } else if (selectedFormat === '16:9') {
          mediaStyle.transform = 'scaleX(-1) scale(1.15)';
          mediaStyle.transformOrigin = 'center center';
@@ -321,16 +322,9 @@ export default function SocialAssetGenerator() {
           ctx.drawImage(media, -dw/2, -dh/2, dw, dh);
         } else if (selectedCohort.id === 'cloud') {
           if (selectedFormat === '9:16') {
-              // Canvas scaling and flipping to match exact crop logic
-              const bgScale = 1.5;
-              const scaledH = exportHeight * bgScale;
-              const scaledW = scaledH * (mw / mh);
-              const shiftX = exportWidth * 0.15; // Visual offset to reveal the left edge perfectly
-              
-              ctx.translate(0, 0); 
-              ctx.scale(-1, 1); // Flip horizontally
-              // Draw starting at negative scaled width brings the right edge exactly to X=0.
-              ctx.drawImage(media, -scaledW + shiftX, (exportHeight - scaledH)/2, scaledW, scaledH);
+              // Mathematically anchor original right edge of video to left edge of canvas
+              ctx.scale(-1, 1); 
+              ctx.drawImage(media, -dw, (exportHeight - dh)/2, dw, dh);
           } else if (selectedFormat === '16:9') {
               ctx.translate(exportWidth/2, exportHeight/2);
               ctx.scale(-1.15, 1.15); 
@@ -390,17 +384,17 @@ export default function SocialAssetGenerator() {
         // --- STRICT 9:16 CLOUD NO IMAGE EXPORT ENGINE (PIXEL PERFECT) ---
         if (isCloudNoImage && selectedFormat === '9:16') {
           
-          // 1. Program Lockup Placement (Exactly 205px from top, 616px wide)
-          const lockupY = exportHeight * (205 / 1920); 
-          const lockupW = exportWidth * (616 / 1080);
-          const lockupX = (exportWidth / 2) - (lockupW / 2);
+          // 1. Program Lockup Placement (Exactly 205px from top, 616px wide / 232px margin)
+          const lockupY = 205; 
+          const lockupW = 616; // 1080 - 232 - 232
+          const lockupX = 232;
           
           if (preMadeLockupImg) {
             const lockupH = lockupW / (preMadeLockupImg.width / preMadeLockupImg.height);
             ctx.drawImage(preMadeLockupImg, lockupX, lockupY, lockupW, lockupH);
           } else {
             // Fallback text rendering
-            const logoH = 90; 
+            const logoH = 80; 
             const logoX = exportWidth / 2;
             
             if (logoImg) {
@@ -418,8 +412,8 @@ export default function SocialAssetGenerator() {
             ctx.fillText(selectedCohort.name, logoX, programY + 50); 
           }
 
-          // 2. Headline Placement (Exactly 740px from top)
-          const mainCopyY = exportHeight * (740 / 1920);
+          // 2. Headline Placement (Top of W exactly 740px from top)
+          const mainCopyY = 740;
 
           if (preMadeHeadlineImg) {
             // Renders your perfect headline PNG exactly 740px down
@@ -427,7 +421,7 @@ export default function SocialAssetGenerator() {
             const hlH = hlW / (preMadeHeadlineImg.width / preMadeHeadlineImg.height);
             ctx.drawImage(preMadeHeadlineImg, 0, mainCopyY, hlW, hlH);
           } else {
-            // Fallback text rendering
+            // Fallback text rendering strictly anchored to exact pixels
             const h1Text = "We’re building"; 
             
             ctx.font = `500 100px "Google Sans Flex", sans-serif`;
@@ -436,12 +430,14 @@ export default function SocialAssetGenerator() {
             
             ctx.font = `500 ${edgeToEdgeSize}px "Google Sans Flex", sans-serif`;
             ctx.textAlign = 'left';
-            ctx.fillText(h1Text, 0, mainCopyY + (edgeToEdgeSize * 0.8)); // Offset to match baseline
+            ctx.textBaseline = 'top'; // Locks coordinates to top of the text block
+            ctx.fillText(h1Text, 0, mainCopyY); // Top of 'W' at exactly 740px
 
             const fasterSize = edgeToEdgeSize * 1.85; 
             ctx.font = `500 ${fasterSize}px "Google Sans Flex", sans-serif`;
             ctx.textAlign = 'right';
-            ctx.fillText("faster", exportWidth - 6, mainCopyY + (edgeToEdgeSize * 0.8) + fasterSize * 0.82);
+            ctx.textBaseline = 'alphabetic'; // Lock to baseline
+            ctx.fillText("faster", exportWidth - 6, 1161); // Base exactly 759px from bottom (1920-759 = 1161)
           }
 
           // 3. CTA Pill: Centered, glassy asset loading, base flush to 1/4 from bottom
@@ -794,18 +790,18 @@ export default function SocialAssetGenerator() {
                   />
 
                   {/* Edge-to-Edge Typography Fallback (Hidden if PNG loads) */}
-                  <div className="absolute left-0 w-full flex-col m-0 p-0" style={{ display: 'none', top: '38.54cqh' }}>
+                  <div className="absolute left-0 w-full flex-col m-0 p-0" style={{ display: 'none' }}>
                     <div style={{ 
-                      color: 'white', fontWeight: 500, textAlign: 'left', lineHeight: 0.9,
-                      fontSize: '16.2cqi', 
-                      width: '100%', margin: 0, padding: 0, whiteSpace: 'nowrap'
+                      position: 'absolute', top: '38.54cqh', left: 0,
+                      color: 'white', fontWeight: 500, textAlign: 'left', lineHeight: 1,
+                      fontSize: '16.2cqi', width: '100%', margin: 0, padding: 0, whiteSpace: 'nowrap'
                     }}>
                       We’re building
                     </div>
                     <div style={{ 
-                      color: 'white', fontWeight: 500, textAlign: 'right', lineHeight: 0.85,
-                      fontSize: '32cqi', 
-                      width: '100%', margin: 0, paddingRight: '0.8cqi', whiteSpace: 'nowrap'
+                      position: 'absolute', bottom: '39.53cqh', right: '0.8cqi',
+                      color: 'white', fontWeight: 500, textAlign: 'right', lineHeight: 0.8,
+                      fontSize: '32cqi', width: '100%', margin: 0, whiteSpace: 'nowrap'
                     }}>
                       faster
                     </div>
