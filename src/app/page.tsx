@@ -197,8 +197,8 @@ export default function SocialAssetGenerator() {
      mediaStyle.transform = 'translate(25%, 25%) scale(1.5)';
   } else if (selectedCohort.id === 'cloud') {
      if (selectedFormat === '9:16') {
-         // Deep flip handled by wrapper div now to guarantee left edge alignment
-         mediaStyle.objectPosition = 'right center';
+         // Deep left anchor handled directly by classNames (object-right and scaleX(-1))
+         mediaStyle = { width: '100%', height: '100%', objectFit: 'cover' };
      } else if (selectedFormat === '16:9') {
          mediaStyle.transform = 'scaleX(-1) scale(1.15)';
          mediaStyle.transformOrigin = 'center center';
@@ -289,6 +289,7 @@ export default function SocialAssetGenerator() {
 
       try { logoImg = await loadImg('/assets/gfs-logo-white.png'); } catch (e) { }
       try { pillImg = await loadImg('/assets/glassy-pill.png'); } catch (e) { }
+      // Load pre-made PNG lockups
       try { preMadeLockupImg = await loadImg(`/assets/${selectedCohort.id}-lockup.png`); } catch (e) { }
       try { preMadeHeadlineImg = await loadImg(`/assets/${selectedCohort.id}-headline.png`); } catch (e) { }
       
@@ -320,10 +321,16 @@ export default function SocialAssetGenerator() {
           ctx.drawImage(media, -dw/2, -dh/2, dw, dh);
         } else if (selectedCohort.id === 'cloud') {
           if (selectedFormat === '9:16') {
-              // Canvas scaling and flipping to guarantee left edge alignment
-              // Drawing at -dw places the original right edge perfectly at visual x=0 after the flip
-              ctx.scale(-1, 1); 
-              ctx.drawImage(media, -dw, (exportHeight - dh)/2, dw, dh);
+              // Perfect CSS transform flip replicate: Anchor original right edge exactly to the left edge
+              const scaleBg = Math.max(exportWidth / mw, exportHeight / mh);
+              const scaledW = mw * scaleBg;
+              const scaledH = mh * scaleBg;
+              const xOffset = exportWidth - scaledW; 
+              
+              ctx.translate(exportWidth / 2, exportHeight / 2);
+              ctx.scale(-1, 1);
+              ctx.translate(-exportWidth / 2, -exportHeight / 2);
+              ctx.drawImage(media, xOffset, (exportHeight - scaledH) / 2, scaledW, scaledH);
           } else if (selectedFormat === '16:9') {
               ctx.translate(exportWidth/2, exportHeight/2);
               ctx.scale(-1.15, 1.15); 
@@ -436,7 +443,7 @@ export default function SocialAssetGenerator() {
             ctx.font = `500 ${fasterSize}px "Google Sans Flex", sans-serif`;
             ctx.textAlign = 'right';
             ctx.textBaseline = 'alphabetic'; // Lock to baseline
-            ctx.fillText("faster", exportWidth - 6, 1161); // Base exactly 759px from bottom (1920-759 = 1161)
+            ctx.fillText("faster", exportWidth - 12, exportHeight - 759); // Base exactly 759px from bottom
           }
 
           // 3. CTA Pill: Centered, glassy asset loading, base flush to 1/4 from bottom
@@ -722,7 +729,7 @@ export default function SocialAssetGenerator() {
                         playsInline
                         onError={() => setVideoLoadError(true)}
                         style={{ ...mediaStyle, objectPosition: isCloudNoImage && selectedFormat === '9:16' ? 'right center' : mediaStyle.objectPosition }}
-                        className={`w-full h-full ${selectedCohort.cropRule} ${videoLoadError ? 'hidden' : 'block'}`}
+                        className={`w-full h-full object-cover ${videoLoadError ? 'hidden' : 'block'}`}
                       />
                     </div>
                     {videoLoadError && (
@@ -740,7 +747,7 @@ export default function SocialAssetGenerator() {
                       src={currentAssetSrc}
                       alt={`${selectedCohort.name} backdrop`}
                       style={{ ...mediaStyle, objectPosition: isCloudNoImage && selectedFormat === '9:16' ? 'right center' : mediaStyle.objectPosition }}
-                      className={`w-full h-full ${selectedCohort.cropRule}`}
+                      className={`w-full h-full object-cover`}
                     />
                   </div>
                 )}
@@ -751,12 +758,12 @@ export default function SocialAssetGenerator() {
               {isCloudNoImage && selectedFormat === '9:16' ? (
                 <div className="absolute inset-0 z-10 pointer-events-none flex flex-col" style={{ letterSpacing: '0px' }}>
                   
-                  {/* PRE-MADE LOCKUP PNG SUPPORT - Exactly 205px down, 616px wide */}
+                  {/* PRE-MADE LOCKUP PNG SUPPORT - Exactly 205px down, 232px margin */}
                   <img 
                     src={`/assets/${selectedCohort.id}-lockup.png`} 
                     alt="Pre-made Lockup"
-                    className="absolute left-1/2 -translate-x-1/2"
-                    style={{ top: '10.68cqh', width: '57.04cqi', height: 'auto' }}
+                    className="absolute"
+                    style={{ top: '10.677%', left: '21.481%', width: '57.037%', height: 'auto' }}
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
                       const fallback = e.currentTarget.nextElementSibling as HTMLElement;
@@ -765,7 +772,7 @@ export default function SocialAssetGenerator() {
                   />
                   
                   {/* Fallback Centered Logo Lockup (Hidden if PNG loads) */}
-                  <div className="absolute left-0 w-full flex-col items-center justify-start m-0 p-0" style={{ display: 'none', top: '10.68cqh' }}>
+                  <div className="absolute left-0 w-full flex-col items-center justify-start m-0 p-0" style={{ display: 'none', top: '10.677%' }}>
                     <img 
                       src="/assets/gfs-logo-white.png" 
                       alt="Google for Startups Logo"
@@ -785,7 +792,7 @@ export default function SocialAssetGenerator() {
                     src={`/assets/${selectedCohort.id}-headline.png`} 
                     alt="Pre-made Headline"
                     className="absolute left-0"
-                    style={{ top: '38.54cqh', width: '100cqi', height: 'auto' }}
+                    style={{ top: '38.541%', width: '100%', height: 'auto' }}
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
                       const fallback = e.currentTarget.nextElementSibling as HTMLElement;
@@ -793,17 +800,18 @@ export default function SocialAssetGenerator() {
                     }}
                   />
 
-                  {/* Edge-to-Edge Typography Fallback (Fixed nested padding bug) */}
-                  <div className="absolute left-0 w-full m-0 p-0" style={{ display: 'none', top: '38.54cqh' }}>
+                  {/* Edge-to-Edge Typography Fallback (Un-nested absolute positioning) */}
+                  <div className="absolute left-0 w-full h-full m-0 p-0" style={{ display: 'none' }}>
                     <div style={{ 
+                      position: 'absolute', top: '38.541%', left: 0,
                       color: 'white', fontWeight: 500, textAlign: 'left', lineHeight: 1,
                       fontSize: '16.2cqi', width: '100%', margin: 0, padding: 0, whiteSpace: 'nowrap'
                     }}>
                       We’re building
                     </div>
-                    {/* Positioned exactly relative to the bottom measurement rule (1161px down) */}
+                    {/* Positioned exactly 759px from bottom */}
                     <div style={{ 
-                      position: 'absolute', top: '21.9cqh', right: '0.8cqi',
+                      position: 'absolute', bottom: '39.531%', right: '1.2cqi',
                       color: 'white', fontWeight: 500, textAlign: 'right', lineHeight: 0.8,
                       fontSize: '32cqi', width: '100%', margin: 0, whiteSpace: 'nowrap'
                     }}>
