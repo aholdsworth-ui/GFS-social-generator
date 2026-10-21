@@ -197,9 +197,9 @@ export default function SocialAssetGenerator() {
      mediaStyle.transform = 'translate(25%, 25%) scale(1.5)';
   } else if (selectedCohort.id === 'cloud') {
      if (selectedFormat === '9:16') {
-         // Deep left anchor for the rainbow motion crop
-         mediaStyle.transformOrigin = 'left center';
-         mediaStyle.transform = 'scaleX(-1) scale(1.8) translateX(-45%)';
+         // Aggressively shifted to the right internally so the flipped rainbow anchors on the left edge
+         mediaStyle.transformOrigin = 'center center';
+         mediaStyle.transform = 'scaleX(-1) scale(1.8) translateX(20%)';
      } else if (selectedFormat === '16:9') {
          mediaStyle.transform = 'scaleX(-1) scale(1.15)';
          mediaStyle.transformOrigin = 'center center';
@@ -286,10 +286,13 @@ export default function SocialAssetGenerator() {
       let bgImg: HTMLImageElement | null = null;
       let pillImg: HTMLImageElement | null = null;
       let preMadeLockupImg: HTMLImageElement | null = null;
+      let preMadeHeadlineImg: HTMLImageElement | null = null;
 
       try { logoImg = await loadImg('/assets/gfs-logo-white.png'); } catch (e) { }
       try { pillImg = await loadImg('/assets/glassy-pill.png'); } catch (e) { }
+      // Attempt to load the pre-made PNG lockups if you added them to the folder
       try { preMadeLockupImg = await loadImg(`/assets/${selectedCohort.id}-lockup.png`); } catch (e) { }
+      try { preMadeHeadlineImg = await loadImg(`/assets/${selectedCohort.id}-headline.png`); } catch (e) { }
       
       if (uploadedImage && !isCloudNoImage) {
         try { userImg = await loadImg(uploadedImage); } catch (e) { }
@@ -319,11 +322,12 @@ export default function SocialAssetGenerator() {
           ctx.drawImage(media, -dw/2, -dh/2, dw, dh);
         } else if (selectedCohort.id === 'cloud') {
           if (selectedFormat === '9:16') {
-              // Deep left anchor for Canvas export
+              // Deep translation to ensure the flipped rainbow sits on the left edge
               const scaleBg = 1.8;
-              ctx.translate(0, exportHeight/2);
+              ctx.translate(exportWidth/2, exportHeight/2);
               ctx.scale(-scaleBg, scaleBg); 
-              ctx.drawImage(media, -dw/2 - (exportWidth * 0.35), -dh/2, dw, dh);
+              const tx = exportWidth * 0.2; // Translates the flipped asset heavily
+              ctx.drawImage(media, -dw/2 + tx, -dh/2, dw, dh);
           } else if (selectedFormat === '16:9') {
               ctx.translate(exportWidth/2, exportHeight/2);
               ctx.scale(-1.15, 1.15); 
@@ -380,20 +384,20 @@ export default function SocialAssetGenerator() {
         ctx.fillStyle = vignette;
         ctx.fillRect(0, 0, exportWidth, exportHeight);
 
-        // --- STRICT 9:16 CLOUD NO IMAGE EXPORT ENGINE MATH ---
+        // --- STRICT 9:16 CLOUD NO IMAGE EXPORT ENGINE ---
         if (isCloudNoImage && selectedFormat === '9:16') {
           
           // 1. Program Lockup Placement
           const lockupY = exportHeight * 0.08; 
           
           if (preMadeLockupImg) {
-            // Use user-provided lockup PNG
-            const lockupW = exportWidth * 0.65; // Adjust this width as needed based on your PNG crop
+            // PNG Support
+            const lockupW = exportWidth * 0.70; 
             const lockupH = lockupW / (preMadeLockupImg.width / preMadeLockupImg.height);
             ctx.drawImage(preMadeLockupImg, (exportWidth / 2) - (lockupW / 2), lockupY, lockupW, lockupH);
           } else {
-            // Fallback rendering
-            const logoH = 75; 
+            // Fallback text rendering
+            const logoH = 90; // Upsized fallback
             const logoX = exportWidth / 2;
             
             if (logoImg) {
@@ -406,30 +410,38 @@ export default function SocialAssetGenerator() {
             const programGap = logoH * 2;
             const programY = lockupY + logoH + programGap;
             ctx.fillStyle = '#FFFFFF';
-            ctx.font = `500 75px "Google Sans Flex", sans-serif`; 
+            ctx.font = `500 85px "Google Sans Flex", sans-serif`; 
             ctx.textAlign = 'center';
             ctx.fillText(selectedCohort.name, logoX, programY + 50); 
           }
 
-          // 2. Headline 1: 15px higher, flush Left (0), doubled safety padding (32px)
+          // 2. Headline: PNG Support or Text Fallback
           const mainCopyY = exportHeight * 0.36;
-          const h1Text = "We’re building"; 
-          
-          ctx.font = `500 100px "Google Sans Flex", sans-serif`;
-          const baseWidth = ctx.measureText(h1Text).width;
-          const edgeToEdgeSize = 100 * ((exportWidth - 32) / baseWidth); // 32px safety padding to save 'g'
-          
-          ctx.font = `500 ${edgeToEdgeSize}px "Google Sans Flex", sans-serif`;
-          ctx.textAlign = 'left';
-          ctx.fillText(h1Text, 0, mainCopyY); 
 
-          // 3. Headline 2: Faster (Nudged left half the distance -> 6px)
-          const fasterSize = edgeToEdgeSize * 1.85; 
-          ctx.font = `500 ${fasterSize}px "Google Sans Flex", sans-serif`;
-          ctx.textAlign = 'right';
-          ctx.fillText("faster", exportWidth - 6, mainCopyY + fasterSize * 0.82);
+          if (preMadeHeadlineImg) {
+            // Renders your perfect headline PNG locked edge-to-edge
+            const hlW = exportWidth; 
+            const hlH = hlW / (preMadeHeadlineImg.width / preMadeHeadlineImg.height);
+            ctx.drawImage(preMadeHeadlineImg, 0, mainCopyY, hlW, hlH);
+          } else {
+            // Fallback text rendering
+            const h1Text = "We’re building"; 
+            
+            ctx.font = `500 100px "Google Sans Flex", sans-serif`;
+            const baseWidth = ctx.measureText(h1Text).width;
+            const edgeToEdgeSize = 100 * ((exportWidth - 16) / baseWidth); // Reduced 16px safety padding
+            
+            ctx.font = `500 ${edgeToEdgeSize}px "Google Sans Flex", sans-serif`;
+            ctx.textAlign = 'left';
+            ctx.fillText(h1Text, 0, mainCopyY); 
 
-          // 4. CTA Pill: Centered, glassy asset loading, base flush to 1/4 from bottom
+            const fasterSize = edgeToEdgeSize * 1.85; 
+            ctx.font = `500 ${fasterSize}px "Google Sans Flex", sans-serif`;
+            ctx.textAlign = 'right';
+            ctx.fillText("faster", exportWidth - 6, mainCopyY + fasterSize * 0.82);
+          }
+
+          // 3. CTA Pill: Centered, glassy asset loading, base flush to 1/4 from bottom
           const pillW = 378; 
           const pillH = 97;  
           const ctaX = (exportWidth / 2) - (pillW / 2);
@@ -732,7 +744,7 @@ export default function SocialAssetGenerator() {
                 <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/35 pointer-events-none" />
               </div>
 
-              {/* --- NEW APPROACH: INLINE EXACT PERCENTAGES FOR 9:16 CLOUD NO IMAGE --- */}
+              {/* --- NEW APPROACH: PRE-MADE PNG OVERRIDES OR EXACT PERCENTAGES FOR 9:16 --- */}
               {isCloudNoImage && selectedFormat === '9:16' ? (
                 <div className="absolute inset-0 z-10 pointer-events-none flex flex-col" style={{ letterSpacing: '0px' }}>
                   
@@ -748,35 +760,43 @@ export default function SocialAssetGenerator() {
                     }}
                   />
                   
-                  {/* Fallback Centered Logo Lockup & STRICT 2x G Spacing (Hidden if PNG loads) */}
+                  {/* Fallback Centered Logo Lockup (Hidden if PNG loads) */}
                   <div className="absolute top-[8%] left-0 w-full flex-col items-center justify-start m-0 p-0" style={{ display: 'none' }}>
                     <img 
                       src="/assets/gfs-logo-white.png" 
                       alt="Google for Startups Logo"
-                      style={{ height: '7cqi', width: 'auto', display: 'block' }}
+                      style={{ height: '8.5cqi', width: 'auto', display: 'block' }}
                     />
                     <div style={{ 
-                        color: 'white', fontWeight: 500, fontSize: '7cqi', 
-                        marginTop: '14cqi', // Exactly 2x the 7cqi logo height
+                        color: 'white', fontWeight: 500, fontSize: '8cqi', 
+                        marginTop: '17cqi', // Exactly 2x the logo height
                         lineHeight: 1
                     }}>
                       {selectedCohort.name}
                     </div>
                   </div>
 
-                  {/* Edge-to-Edge Typography Container - Anchor 36% (15px higher) */}
-                  <div className="absolute top-[36%] left-0 w-full flex flex-col m-0 p-0">
-                    
-                    {/* We’re building - ZERO padding, Flush Left, 'g' buffered x2 (32px safety) */}
+                  {/* PRE-MADE HEADLINE PNG SUPPORT */}
+                  <img 
+                    src={`/assets/${selectedCohort.id}-headline.png`} 
+                    alt="Pre-made Headline"
+                    className="absolute top-[36%] left-0 w-[100cqi] h-auto"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                      if (fallback) fallback.style.display = 'flex';
+                    }}
+                  />
+
+                  {/* Edge-to-Edge Typography Fallback (Hidden if PNG loads) */}
+                  <div className="absolute top-[36%] left-0 w-full flex-col m-0 p-0" style={{ display: 'none' }}>
                     <div style={{ 
                       color: 'white', fontWeight: 500, textAlign: 'left', lineHeight: 0.9,
-                      fontSize: '15.6cqi', 
+                      fontSize: '16.2cqi', 
                       width: '100%', margin: 0, padding: 0, whiteSpace: 'nowrap'
                     }}>
                       We’re building
                     </div>
-                    
-                    {/* faster - Flush right zero padding, scaled large, nudged slightly left by half */}
                     <div style={{ 
                       color: 'white', fontWeight: 500, textAlign: 'right', lineHeight: 0.85,
                       fontSize: '32cqi', 
@@ -784,7 +804,6 @@ export default function SocialAssetGenerator() {
                     }}>
                       faster
                     </div>
-
                   </div>
 
                   {/* 1/4 Bottom CTA Pill (bottom: 25%) mapped to Glassy Asset */}
