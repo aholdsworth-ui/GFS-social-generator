@@ -197,9 +197,9 @@ export default function SocialAssetGenerator() {
      mediaStyle.transform = 'translate(25%, 25%) scale(1.5)';
   } else if (selectedCohort.id === 'cloud') {
      if (selectedFormat === '9:16') {
-         // Flipped horizontally, scaled, and translated to firmly anchor the rainbow on the left edge
-         mediaStyle.transformOrigin = 'center center';
-         mediaStyle.transform = 'scaleX(-1) scale(1.6) translateX(10%)';
+         // Deep left anchor for the rainbow motion crop
+         mediaStyle.transformOrigin = 'left center';
+         mediaStyle.transform = 'scaleX(-1) scale(1.8) translateX(-45%)';
      } else if (selectedFormat === '16:9') {
          mediaStyle.transform = 'scaleX(-1) scale(1.15)';
          mediaStyle.transformOrigin = 'center center';
@@ -285,9 +285,11 @@ export default function SocialAssetGenerator() {
       let userImg: HTMLImageElement | null = null;
       let bgImg: HTMLImageElement | null = null;
       let pillImg: HTMLImageElement | null = null;
+      let preMadeLockupImg: HTMLImageElement | null = null;
 
       try { logoImg = await loadImg('/assets/gfs-logo-white.png'); } catch (e) { }
       try { pillImg = await loadImg('/assets/glassy-pill.png'); } catch (e) { }
+      try { preMadeLockupImg = await loadImg(`/assets/${selectedCohort.id}-lockup.png`); } catch (e) { }
       
       if (uploadedImage && !isCloudNoImage) {
         try { userImg = await loadImg(uploadedImage); } catch (e) { }
@@ -317,12 +319,11 @@ export default function SocialAssetGenerator() {
           ctx.drawImage(media, -dw/2, -dh/2, dw, dh);
         } else if (selectedCohort.id === 'cloud') {
           if (selectedFormat === '9:16') {
-              // Canvas scaling and flipping to match CSS (rainbow blocks anchored left)
-              const scaleBg = 1.6;
-              ctx.translate(exportWidth/2, exportHeight/2);
-              ctx.scale(-scaleBg, scaleBg); // Flipped horizontally
-              const tx = exportWidth * 0.10; // Translate to align
-              ctx.drawImage(media, -dw/2 + tx, -dh/2, dw, dh);
+              // Deep left anchor for Canvas export
+              const scaleBg = 1.8;
+              ctx.translate(0, exportHeight/2);
+              ctx.scale(-scaleBg, scaleBg); 
+              ctx.drawImage(media, -dw/2 - (exportWidth * 0.35), -dh/2, dw, dh);
           } else if (selectedFormat === '16:9') {
               ctx.translate(exportWidth/2, exportHeight/2);
               ctx.scale(-1.15, 1.15); 
@@ -382,46 +383,55 @@ export default function SocialAssetGenerator() {
         // --- STRICT 9:16 CLOUD NO IMAGE EXPORT ENGINE MATH ---
         if (isCloudNoImage && selectedFormat === '9:16') {
           
-          // 1. Logo & Program: Centered with exact 2x G Spacing and upsized
-          const logoH = 75; 
-          const logoX = exportWidth / 2;
-          const logoY = exportHeight * 0.08; 
+          // 1. Program Lockup Placement
+          const lockupY = exportHeight * 0.08; 
           
-          if (logoImg) {
-            const logoW = logoH * (logoImg.width / logoImg.height);
-            ctx.drawImage(logoImg, logoX - (logoW / 2), logoY, logoW, logoH);
+          if (preMadeLockupImg) {
+            // Use user-provided lockup PNG
+            const lockupW = exportWidth * 0.65; // Adjust this width as needed based on your PNG crop
+            const lockupH = lockupW / (preMadeLockupImg.width / preMadeLockupImg.height);
+            ctx.drawImage(preMadeLockupImg, (exportWidth / 2) - (lockupW / 2), lockupY, lockupW, lockupH);
           } else {
-            drawFallbackLogo(ctx, logoX - 50, logoY, 1.0);
+            // Fallback rendering
+            const logoH = 75; 
+            const logoX = exportWidth / 2;
+            
+            if (logoImg) {
+              const logoW = logoH * (logoImg.width / logoImg.height);
+              ctx.drawImage(logoImg, logoX - (logoW / 2), lockupY, logoW, logoH);
+            } else {
+              drawFallbackLogo(ctx, logoX - 50, lockupY, 1.0);
+            }
+
+            const programGap = logoH * 2;
+            const programY = lockupY + logoH + programGap;
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = `500 75px "Google Sans Flex", sans-serif`; 
+            ctx.textAlign = 'center';
+            ctx.fillText(selectedCohort.name, logoX, programY + 50); 
           }
 
-          const programGap = logoH * 2; // Exactly 2x G
-          const programY = logoY + logoH + programGap;
-          ctx.fillStyle = '#FFFFFF';
-          ctx.font = `500 75px "Google Sans Flex", sans-serif`; // Matched scale to logo
-          ctx.textAlign = 'center';
-          ctx.fillText(selectedCohort.name, logoX, programY + 50); 
-
-          // 2. Headline 1: 15px higher, flush Left (0), and safe 'g'
-          const mainCopyY = exportHeight * 0.385;
-          const h1Text = "We’re building"; // Strict typographic quote U+2019
+          // 2. Headline 1: 15px higher, flush Left (0), doubled safety padding (32px)
+          const mainCopyY = exportHeight * 0.36;
+          const h1Text = "We’re building"; 
           
           ctx.font = `500 100px "Google Sans Flex", sans-serif`;
           const baseWidth = ctx.measureText(h1Text).width;
-          const edgeToEdgeSize = 100 * ((exportWidth - 16) / baseWidth); // 16px buffer to save the 'g'
+          const edgeToEdgeSize = 100 * ((exportWidth - 32) / baseWidth); // 32px safety padding to save 'g'
           
           ctx.font = `500 ${edgeToEdgeSize}px "Google Sans Flex", sans-serif`;
           ctx.textAlign = 'left';
-          ctx.fillText(h1Text, 0, mainCopyY); // Flush to 0px
+          ctx.fillText(h1Text, 0, mainCopyY); 
 
-          // 3. Headline 2: Faster (Nudged left 12px)
+          // 3. Headline 2: Faster (Nudged left half the distance -> 6px)
           const fasterSize = edgeToEdgeSize * 1.85; 
           ctx.font = `500 ${fasterSize}px "Google Sans Flex", sans-serif`;
           ctx.textAlign = 'right';
-          ctx.fillText("faster", exportWidth - 12, mainCopyY + fasterSize * 0.82);
+          ctx.fillText("faster", exportWidth - 6, mainCopyY + fasterSize * 0.82);
 
-          // 4. CTA Pill: Centered, glassy asset loading, base flush to 1/4 from bottom (25%)
-          const pillW = 378; // 35% of 1080px width
-          const pillH = 97;  // 9% of 1080px width
+          // 4. CTA Pill: Centered, glassy asset loading, base flush to 1/4 from bottom
+          const pillW = 378; 
+          const pillH = 97;  
           const ctaX = (exportWidth / 2) - (pillW / 2);
           const ctaY = exportHeight - (exportHeight * 0.25) - pillH;
 
@@ -438,7 +448,7 @@ export default function SocialAssetGenerator() {
           }
 
           ctx.fillStyle = '#FFFFFF';
-          ctx.font = `500 36px "Google Sans Flex", sans-serif`; // Upsized point size
+          ctx.font = `500 36px "Google Sans Flex", sans-serif`; 
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText('Find out more', ctaX + pillW / 2, ctaY + pillH / 2 + 2);
@@ -726,8 +736,20 @@ export default function SocialAssetGenerator() {
               {isCloudNoImage && selectedFormat === '9:16' ? (
                 <div className="absolute inset-0 z-10 pointer-events-none flex flex-col" style={{ letterSpacing: '0px' }}>
                   
-                  {/* Centered Logo Lockup & STRICT 2x G Spacing */}
-                  <div className="absolute top-[8%] left-0 w-full flex flex-col items-center justify-start m-0 p-0">
+                  {/* PRE-MADE LOCKUP PNG SUPPORT */}
+                  <img 
+                    src={`/assets/${selectedCohort.id}-lockup.png`} 
+                    alt="Pre-made Lockup"
+                    className="absolute top-[8%] left-1/2 -translate-x-1/2 h-[12cqi] w-auto"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                      if (fallback) fallback.style.display = 'flex';
+                    }}
+                  />
+                  
+                  {/* Fallback Centered Logo Lockup & STRICT 2x G Spacing (Hidden if PNG loads) */}
+                  <div className="absolute top-[8%] left-0 w-full flex-col items-center justify-start m-0 p-0" style={{ display: 'none' }}>
                     <img 
                       src="/assets/gfs-logo-white.png" 
                       alt="Google for Startups Logo"
@@ -742,23 +764,23 @@ export default function SocialAssetGenerator() {
                     </div>
                   </div>
 
-                  {/* Edge-to-Edge Typography Container - Anchor 38.5% (15px higher) */}
-                  <div className="absolute top-[38.5%] left-0 w-full flex flex-col m-0 p-0">
+                  {/* Edge-to-Edge Typography Container - Anchor 36% (15px higher) */}
+                  <div className="absolute top-[36%] left-0 w-full flex flex-col m-0 p-0">
                     
-                    {/* We’re building - ZERO padding, Flush Left, 'g' buffered */}
+                    {/* We’re building - ZERO padding, Flush Left, 'g' buffered x2 (32px safety) */}
                     <div style={{ 
                       color: 'white', fontWeight: 500, textAlign: 'left', lineHeight: 0.9,
-                      fontSize: '16.5cqi', 
+                      fontSize: '15.6cqi', 
                       width: '100%', margin: 0, padding: 0, whiteSpace: 'nowrap'
                     }}>
                       We’re building
                     </div>
                     
-                    {/* faster - Flush right zero padding, scaled large, nudged slightly left */}
+                    {/* faster - Flush right zero padding, scaled large, nudged slightly left by half */}
                     <div style={{ 
                       color: 'white', fontWeight: 500, textAlign: 'right', lineHeight: 0.85,
                       fontSize: '32cqi', 
-                      width: '100%', margin: 0, paddingRight: '1.5cqi', whiteSpace: 'nowrap'
+                      width: '100%', margin: 0, paddingRight: '0.8cqi', whiteSpace: 'nowrap'
                     }}>
                       faster
                     </div>
