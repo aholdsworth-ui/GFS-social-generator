@@ -197,8 +197,9 @@ export default function SocialAssetGenerator() {
      mediaStyle.transform = 'translate(25%, 25%) scale(1.5)';
   } else if (selectedCohort.id === 'cloud') {
      if (selectedFormat === '9:16') {
-         // FLIPPED horizontally and shifted slightly to push the rainbow blocks to the far left
-         mediaStyle.transform = 'scaleX(-1.6) scaleY(1.6) translateX(-5%)';
+         // FLIPPED horizontally and shifted so the rainbow blocks anchor the left edge.
+         mediaStyle.transformOrigin = 'center center';
+         mediaStyle.transform = 'scaleX(-1) scale(1.6) translateX(12%)';
      } else if (selectedFormat === '16:9') {
          mediaStyle.transform = 'scaleX(-1) scale(1.15)';
          mediaStyle.transformOrigin = 'center center';
@@ -316,11 +317,11 @@ export default function SocialAssetGenerator() {
           ctx.drawImage(media, -dw/2, -dh/2, dw, dh);
         } else if (selectedCohort.id === 'cloud') {
           if (selectedFormat === '9:16') {
-              // Canvas scaling and flipping to match the CSS crop exactly (rainbow blocks pushed far left)
-              const scaleBg = 1.6;
+              // Exact export alignment: flipped and translated to match HTML exactly
+              const scaleBg = 1.8;
               ctx.translate(exportWidth/2, exportHeight/2);
-              ctx.scale(-scaleBg, scaleBg); // Flipped horizontally
-              const tx = exportWidth * 0.05; // Adjust alignment post-flip
+              ctx.scale(-scaleBg, scaleBg); 
+              const tx = exportWidth * 0.12; // Shift right-side rainbow elements into view
               ctx.drawImage(media, -dw/2 + tx, -dh/2, dw, dh);
           } else if (selectedFormat === '16:9') {
               ctx.translate(exportWidth/2, exportHeight/2);
@@ -382,9 +383,9 @@ export default function SocialAssetGenerator() {
         if (isCloudNoImage && selectedFormat === '9:16') {
           
           // 1. Logo & Program: Centered with exact 2x G Spacing
-          const logoH = 54; // 5% of 1080px width
+          const logoH = 50; 
           const logoX = exportWidth / 2;
-          const logoY = exportHeight * 0.10; 
+          const logoY = exportHeight * 0.08; 
           
           if (logoImg) {
             const logoW = logoH * (logoImg.width / logoImg.height);
@@ -396,28 +397,28 @@ export default function SocialAssetGenerator() {
           const programGap = logoH * 2; // Exactly 2x G
           const programY = logoY + logoH + programGap;
           ctx.fillStyle = '#FFFFFF';
-          ctx.font = `500 54px "Google Sans Flex", sans-serif`;
+          ctx.font = `500 64px "Google Sans Flex", sans-serif`; // Matched scale to left asset
           ctx.textAlign = 'center';
-          ctx.fillText(selectedCohort.name, logoX, programY + 45); 
+          ctx.fillText(selectedCohort.name, logoX, programY + 50); 
 
-          // 2. Headline 1: True Edge-to-Edge flush with Canvas width (0 padding)
-          const mainCopyY = exportHeight * 0.43;
-          const h1Text = "We're building"; // Explicit straight quote used for tracking
+          // 2. Headline 1: True Edge-to-Edge, strictly left-aligned at X=0 to force W flush
+          // Shifted Y up by 15px (0.40 instead of 0.43)
+          const mainCopyY = exportHeight * 0.40;
+          const h1Text = "We’re building"; // Typographic apostrophe, uncompressed
           
           ctx.font = `500 100px "Google Sans Flex", sans-serif`;
           const baseWidth = ctx.measureText(h1Text).width;
-          const edgeToEdgeSize = 100 * (exportWidth / baseWidth);
+          const edgeToEdgeSize = 100 * ((exportWidth - 4) / baseWidth); // 4px buffer so 'g' is strictly safe
           
           ctx.font = `500 ${edgeToEdgeSize}px "Google Sans Flex", sans-serif`;
-          ctx.textAlign = 'center';
-          ctx.fillText(h1Text, exportWidth / 2, mainCopyY);
+          ctx.textAlign = 'left';
+          ctx.fillText(h1Text, 0, mainCopyY); // Lock to x=0
 
-          // 3. Headline 2: Faster (Flush right zero padding, scaled to sit under apostrophe)
-          const fasterSize = edgeToEdgeSize * 1.85; // Scales faster significantly up
+          // 3. Headline 2: Faster (Flush right, nudged left by 4px)
+          const fasterSize = edgeToEdgeSize * 1.85; 
           ctx.font = `500 ${fasterSize}px "Google Sans Flex", sans-serif`;
           ctx.textAlign = 'right';
-          // Flush right x=1080
-          ctx.fillText("faster", exportWidth, mainCopyY + fasterSize * 0.82);
+          ctx.fillText("faster", exportWidth - 4, mainCopyY + fasterSize * 0.82);
 
           // 4. CTA Pill: Centered, glassy asset loading, base flush to 1/4 from bottom (25%)
           const pillW = 378; // 35% of 1080px width
@@ -438,10 +439,10 @@ export default function SocialAssetGenerator() {
           }
 
           ctx.fillStyle = '#FFFFFF';
-          ctx.font = `500 32px "Google Sans Flex", sans-serif`;
+          ctx.font = `500 36px "Google Sans Flex", sans-serif`; // Upsized point size
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText('Find out more', ctaX + pillW / 2, ctaY + pillH / 2);
+          ctx.fillText('Find out more', ctaX + pillW / 2, ctaY + pillH / 2 + 2);
 
         } else if (isCloudNoImage) {
           // Fallback logic for 16:9, 1:1, 4:5
@@ -468,7 +469,7 @@ export default function SocialAssetGenerator() {
           const fasterSize = exportWidth * (isLandscape ? 0.14 : 0.32);
 
           ctx.font = `500 ${Math.round(buildSize)}px "Google Sans Flex", sans-serif`;
-          ctx.fillText("We're building", baseX, mainCopyY + buildSize);
+          ctx.fillText("We’re building", baseX, mainCopyY + buildSize);
 
           ctx.font = `500 ${Math.round(fasterSize)}px "Google Sans Flex", sans-serif`;
           const fasterOffsetX = baseX + (isLandscape ? exportWidth * 0.15 : 0);
@@ -724,41 +725,41 @@ export default function SocialAssetGenerator() {
 
               {/* --- NEW APPROACH: INLINE EXACT PERCENTAGES FOR 9:16 CLOUD NO IMAGE --- */}
               {isCloudNoImage && selectedFormat === '9:16' ? (
-                <div className="absolute inset-0 z-10 pointer-events-none flex flex-col" style={{ letterSpacing: '0px' }}>
+                <div className="absolute inset-0 z-10 pointer-events-none flex flex-col" style={{ letterSpacing: 'normal' }}>
                   
                   {/* Centered Logo Lockup & STRICT 2x G Spacing */}
-                  <div className="absolute top-[10%] left-0 w-full flex flex-col items-center justify-start m-0 p-0">
+                  <div className="absolute top-[8%] left-0 w-full flex flex-col items-center justify-start m-0 p-0">
                     <img 
                       src="/assets/gfs-logo-white.png" 
                       alt="Google for Startups Logo"
-                      style={{ height: '5cqi', width: 'auto', display: 'block' }}
+                      style={{ height: '4.6cqi', width: 'auto', display: 'block' }}
                     />
                     <div style={{ 
-                        color: 'white', fontWeight: 500, fontSize: '5cqi', 
-                        marginTop: '10cqi', // Exactly 2x the 5cqi logo height
+                        color: 'white', fontWeight: 500, fontSize: '6cqi', 
+                        marginTop: '9.2cqi', // Exactly 2x the logo height
                         lineHeight: 1
                     }}>
                       {selectedCohort.name}
                     </div>
                   </div>
 
-                  {/* Edge-to-Edge Typography Container */}
-                  <div className="absolute top-[43%] left-0 w-full flex flex-col m-0 p-0">
+                  {/* Edge-to-Edge Typography Container - Anchor 40% (15px higher) */}
+                  <div className="absolute top-[40%] left-0 w-full flex flex-col m-0 p-0">
                     
-                    {/* We're building - ZERO padding, Edge to Edge width matched to Canvas measure */}
+                    {/* We’re building - ZERO padding, Flush Left (0px) */}
                     <div style={{ 
-                      color: 'white', fontWeight: 500, textAlign: 'center', lineHeight: 0.9,
+                      color: 'white', fontWeight: 500, textAlign: 'left', lineHeight: 0.9,
                       fontSize: '17.3cqi', 
                       width: '100%', margin: 0, padding: 0, whiteSpace: 'nowrap'
                     }}>
-                      We're building
+                      We’re building
                     </div>
                     
-                    {/* faster - Flush right zero padding, scaled large to sit under apostrophe */}
+                    {/* faster - Flush right zero padding, scaled large, nudged 4px left */}
                     <div style={{ 
                       color: 'white', fontWeight: 500, textAlign: 'right', lineHeight: 0.85,
                       fontSize: '32cqi', 
-                      width: '100%', margin: 0, padding: 0, whiteSpace: 'nowrap'
+                      width: '100%', margin: 0, paddingRight: '4px', whiteSpace: 'nowrap'
                     }}>
                       faster
                     </div>
@@ -770,7 +771,7 @@ export default function SocialAssetGenerator() {
                        style={{ width: '35cqi', height: '9cqi' }}>
                     <img src="/assets/glassy-pill.png" className="absolute inset-0 w-full h-full object-fill" onError={(e) => e.currentTarget.style.display='none'} />
                     <div className="relative text-white font-medium text-center whitespace-nowrap flex items-center justify-center w-full h-full" 
-                         style={{ fontSize: '3.2cqi', zIndex: 20 }}>
+                         style={{ fontSize: '3.6cqi', zIndex: 20 }}>
                       Find out more
                     </div>
                   </div>
@@ -790,7 +791,7 @@ export default function SocialAssetGenerator() {
                   </div>
                   <div className={`absolute left-7 sm:left-9 md:left-10 text-left whitespace-nowrap ${selectedFormat === '16:9' ? 'top-[40%]' : 'top-[36%]'}`}>
                     <div className={`${selectedFormat === '16:9' ? 'text-[28px] sm:text-[36px] md:text-[42px]' : 'text-[40px] sm:text-[50px] md:text-[56px]'} text-white font-medium leading-[1.05] tracking-normal`}>
-                      We're building
+                      We’re building
                     </div>
                     <div className={`${selectedFormat === '16:9' ? 'text-[50px] sm:text-[68px] md:text-[80px] ml-12 sm:ml-16 md:ml-24' : 'text-[64px] sm:text-[80px] md:text-[90px] ml-0'} text-white font-medium leading-[0.85] mt-1 tracking-normal`}>
                       faster
