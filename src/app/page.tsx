@@ -197,9 +197,8 @@ export default function SocialAssetGenerator() {
      mediaStyle.transform = 'translate(25%, 25%) scale(1.5)';
   } else if (selectedCohort.id === 'cloud') {
      if (selectedFormat === '9:16') {
-         // Aggressively shifted to the right internally so the flipped rainbow anchors on the left edge
-         mediaStyle.transformOrigin = 'center center';
-         mediaStyle.transform = 'scaleX(-1) scale(1.8) translateX(20%)';
+         // Horizontally flipped and matched to the canvas crop logic
+         mediaStyle.transform = 'scaleX(-1) scale(1.5) translateX(15%)';
      } else if (selectedFormat === '16:9') {
          mediaStyle.transform = 'scaleX(-1) scale(1.15)';
          mediaStyle.transformOrigin = 'center center';
@@ -322,12 +321,16 @@ export default function SocialAssetGenerator() {
           ctx.drawImage(media, -dw/2, -dh/2, dw, dh);
         } else if (selectedCohort.id === 'cloud') {
           if (selectedFormat === '9:16') {
-              // Deep translation to ensure the flipped rainbow sits on the left edge
-              const scaleBg = 1.8;
-              ctx.translate(exportWidth/2, exportHeight/2);
-              ctx.scale(-scaleBg, scaleBg); 
-              const tx = exportWidth * 0.2; // Translates the flipped asset heavily
-              ctx.drawImage(media, -dw/2 + tx, -dh/2, dw, dh);
+              // Canvas scaling and flipping to match exact crop logic
+              const bgScale = 1.5;
+              const scaledH = exportHeight * bgScale;
+              const scaledW = scaledH * (mw / mh);
+              const shiftX = exportWidth * 0.15; // Visual offset to reveal the left edge perfectly
+              
+              ctx.translate(0, 0); 
+              ctx.scale(-1, 1); // Flip horizontally
+              // Draw starting at negative scaled width brings the right edge exactly to X=0.
+              ctx.drawImage(media, -scaledW + shiftX, (exportHeight - scaledH)/2, scaledW, scaledH);
           } else if (selectedFormat === '16:9') {
               ctx.translate(exportWidth/2, exportHeight/2);
               ctx.scale(-1.15, 1.15); 
@@ -384,20 +387,20 @@ export default function SocialAssetGenerator() {
         ctx.fillStyle = vignette;
         ctx.fillRect(0, 0, exportWidth, exportHeight);
 
-        // --- STRICT 9:16 CLOUD NO IMAGE EXPORT ENGINE ---
+        // --- STRICT 9:16 CLOUD NO IMAGE EXPORT ENGINE (PIXEL PERFECT) ---
         if (isCloudNoImage && selectedFormat === '9:16') {
           
-          // 1. Program Lockup Placement
-          const lockupY = exportHeight * 0.08; 
+          // 1. Program Lockup Placement (Exactly 205px from top, 616px wide)
+          const lockupY = exportHeight * (205 / 1920); 
+          const lockupW = exportWidth * (616 / 1080);
+          const lockupX = (exportWidth / 2) - (lockupW / 2);
           
           if (preMadeLockupImg) {
-            // PNG Support
-            const lockupW = exportWidth * 0.70; 
             const lockupH = lockupW / (preMadeLockupImg.width / preMadeLockupImg.height);
-            ctx.drawImage(preMadeLockupImg, (exportWidth / 2) - (lockupW / 2), lockupY, lockupW, lockupH);
+            ctx.drawImage(preMadeLockupImg, lockupX, lockupY, lockupW, lockupH);
           } else {
             // Fallback text rendering
-            const logoH = 90; // Upsized fallback
+            const logoH = 90; 
             const logoX = exportWidth / 2;
             
             if (logoImg) {
@@ -415,11 +418,11 @@ export default function SocialAssetGenerator() {
             ctx.fillText(selectedCohort.name, logoX, programY + 50); 
           }
 
-          // 2. Headline: PNG Support or Text Fallback
-          const mainCopyY = exportHeight * 0.36;
+          // 2. Headline Placement (Exactly 740px from top)
+          const mainCopyY = exportHeight * (740 / 1920);
 
           if (preMadeHeadlineImg) {
-            // Renders your perfect headline PNG locked edge-to-edge
+            // Renders your perfect headline PNG exactly 740px down
             const hlW = exportWidth; 
             const hlH = hlW / (preMadeHeadlineImg.width / preMadeHeadlineImg.height);
             ctx.drawImage(preMadeHeadlineImg, 0, mainCopyY, hlW, hlH);
@@ -429,16 +432,16 @@ export default function SocialAssetGenerator() {
             
             ctx.font = `500 100px "Google Sans Flex", sans-serif`;
             const baseWidth = ctx.measureText(h1Text).width;
-            const edgeToEdgeSize = 100 * ((exportWidth - 16) / baseWidth); // Reduced 16px safety padding
+            const edgeToEdgeSize = 100 * ((exportWidth - 16) / baseWidth);
             
             ctx.font = `500 ${edgeToEdgeSize}px "Google Sans Flex", sans-serif`;
             ctx.textAlign = 'left';
-            ctx.fillText(h1Text, 0, mainCopyY); 
+            ctx.fillText(h1Text, 0, mainCopyY + (edgeToEdgeSize * 0.8)); // Offset to match baseline
 
             const fasterSize = edgeToEdgeSize * 1.85; 
             ctx.font = `500 ${fasterSize}px "Google Sans Flex", sans-serif`;
             ctx.textAlign = 'right';
-            ctx.fillText("faster", exportWidth - 6, mainCopyY + fasterSize * 0.82);
+            ctx.fillText("faster", exportWidth - 6, mainCopyY + (edgeToEdgeSize * 0.8) + fasterSize * 0.82);
           }
 
           // 3. CTA Pill: Centered, glassy asset loading, base flush to 1/4 from bottom
@@ -744,15 +747,16 @@ export default function SocialAssetGenerator() {
                 <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/35 pointer-events-none" />
               </div>
 
-              {/* --- NEW APPROACH: PRE-MADE PNG OVERRIDES OR EXACT PERCENTAGES FOR 9:16 --- */}
+              {/* --- NEW APPROACH: EXACT PIXEL PERCENTAGES FOR 9:16 CLOUD NO IMAGE --- */}
               {isCloudNoImage && selectedFormat === '9:16' ? (
                 <div className="absolute inset-0 z-10 pointer-events-none flex flex-col" style={{ letterSpacing: '0px' }}>
                   
-                  {/* PRE-MADE LOCKUP PNG SUPPORT */}
+                  {/* PRE-MADE LOCKUP PNG SUPPORT - Exactly 205px down, 616px wide */}
                   <img 
                     src={`/assets/${selectedCohort.id}-lockup.png`} 
                     alt="Pre-made Lockup"
-                    className="absolute top-[8%] left-1/2 -translate-x-1/2 h-[12cqi] w-auto"
+                    className="absolute left-1/2 -translate-x-1/2"
+                    style={{ top: '10.68cqh', width: '57.04cqi', height: 'auto' }}
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
                       const fallback = e.currentTarget.nextElementSibling as HTMLElement;
@@ -761,7 +765,7 @@ export default function SocialAssetGenerator() {
                   />
                   
                   {/* Fallback Centered Logo Lockup (Hidden if PNG loads) */}
-                  <div className="absolute top-[8%] left-0 w-full flex-col items-center justify-start m-0 p-0" style={{ display: 'none' }}>
+                  <div className="absolute left-0 w-full flex-col items-center justify-start m-0 p-0" style={{ display: 'none', top: '10.68cqh' }}>
                     <img 
                       src="/assets/gfs-logo-white.png" 
                       alt="Google for Startups Logo"
@@ -769,18 +773,19 @@ export default function SocialAssetGenerator() {
                     />
                     <div style={{ 
                         color: 'white', fontWeight: 500, fontSize: '8cqi', 
-                        marginTop: '17cqi', // Exactly 2x the logo height
+                        marginTop: '17cqi', 
                         lineHeight: 1
                     }}>
                       {selectedCohort.name}
                     </div>
                   </div>
 
-                  {/* PRE-MADE HEADLINE PNG SUPPORT */}
+                  {/* PRE-MADE HEADLINE PNG SUPPORT - Exactly 740px down */}
                   <img 
                     src={`/assets/${selectedCohort.id}-headline.png`} 
                     alt="Pre-made Headline"
-                    className="absolute top-[36%] left-0 w-[100cqi] h-auto"
+                    className="absolute left-0"
+                    style={{ top: '38.54cqh', width: '100cqi', height: 'auto' }}
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
                       const fallback = e.currentTarget.nextElementSibling as HTMLElement;
@@ -789,7 +794,7 @@ export default function SocialAssetGenerator() {
                   />
 
                   {/* Edge-to-Edge Typography Fallback (Hidden if PNG loads) */}
-                  <div className="absolute top-[36%] left-0 w-full flex-col m-0 p-0" style={{ display: 'none' }}>
+                  <div className="absolute left-0 w-full flex-col m-0 p-0" style={{ display: 'none', top: '38.54cqh' }}>
                     <div style={{ 
                       color: 'white', fontWeight: 500, textAlign: 'left', lineHeight: 0.9,
                       fontSize: '16.2cqi', 
