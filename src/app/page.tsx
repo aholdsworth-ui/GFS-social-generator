@@ -197,9 +197,8 @@ export default function SocialAssetGenerator() {
      mediaStyle.transform = 'translate(25%, 25%) scale(1.5)';
   } else if (selectedCohort.id === 'cloud') {
      if (selectedFormat === '9:16') {
-         // Anchors original right edge to right boundary, then flips container to put it on left edge
+         // Deep flip handled by wrapper div now to guarantee left edge alignment
          mediaStyle.objectPosition = 'right center';
-         mediaStyle.transform = 'scaleX(-1)';
      } else if (selectedFormat === '16:9') {
          mediaStyle.transform = 'scaleX(-1) scale(1.15)';
          mediaStyle.transformOrigin = 'center center';
@@ -290,7 +289,6 @@ export default function SocialAssetGenerator() {
 
       try { logoImg = await loadImg('/assets/gfs-logo-white.png'); } catch (e) { }
       try { pillImg = await loadImg('/assets/glassy-pill.png'); } catch (e) { }
-      // Attempt to load the pre-made PNG lockups if you added them to the folder
       try { preMadeLockupImg = await loadImg(`/assets/${selectedCohort.id}-lockup.png`); } catch (e) { }
       try { preMadeHeadlineImg = await loadImg(`/assets/${selectedCohort.id}-headline.png`); } catch (e) { }
       
@@ -322,7 +320,8 @@ export default function SocialAssetGenerator() {
           ctx.drawImage(media, -dw/2, -dh/2, dw, dh);
         } else if (selectedCohort.id === 'cloud') {
           if (selectedFormat === '9:16') {
-              // Mathematically anchor original right edge of video to left edge of canvas
+              // Canvas scaling and flipping to guarantee left edge alignment
+              // Drawing at -dw places the original right edge perfectly at visual x=0 after the flip
               ctx.scale(-1, 1); 
               ctx.drawImage(media, -dw, (exportHeight - dh)/2, dw, dh);
           } else if (selectedFormat === '16:9') {
@@ -386,7 +385,7 @@ export default function SocialAssetGenerator() {
           
           // 1. Program Lockup Placement (Exactly 205px from top, 616px wide / 232px margin)
           const lockupY = 205; 
-          const lockupW = 616; // 1080 - 232 - 232
+          const lockupW = 616; // 1080 - 232 - 232 = 616
           const lockupX = 232;
           
           if (preMadeLockupImg) {
@@ -712,17 +711,20 @@ export default function SocialAssetGenerator() {
               <div className="absolute inset-0 overflow-hidden z-0">
                 {assetType === 'motion' ? (
                   <>
-                    <video
-                      ref={videoElementRef}
-                      src={currentAssetSrc}
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                      onError={() => setVideoLoadError(true)}
-                      style={mediaStyle}
-                      className={`w-full h-full ${selectedCohort.cropRule} ${videoLoadError ? 'hidden' : 'block'}`}
-                    />
+                    {/* FLIPPED CONTAINER ensures the entire video is mirrored, forcing the original right edge to align flawlessly to the left visual edge. */}
+                    <div className="absolute inset-0 z-0" style={{ transform: isCloudNoImage && selectedFormat === '9:16' ? 'scaleX(-1)' : 'none' }}>
+                      <video
+                        ref={videoElementRef}
+                        src={currentAssetSrc}
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        onError={() => setVideoLoadError(true)}
+                        style={{ ...mediaStyle, objectPosition: isCloudNoImage && selectedFormat === '9:16' ? 'right center' : mediaStyle.objectPosition }}
+                        className={`w-full h-full ${selectedCohort.cropRule} ${videoLoadError ? 'hidden' : 'block'}`}
+                      />
+                    </div>
                     {videoLoadError && (
                       <MomentumCanvas
                         cohortId={selectedCohort.id}
@@ -733,17 +735,19 @@ export default function SocialAssetGenerator() {
                     )}
                   </>
                 ) : (
-                  <img
-                    src={currentAssetSrc}
-                    alt={`${selectedCohort.name} backdrop`}
-                    style={mediaStyle}
-                    className={`w-full h-full ${selectedCohort.cropRule}`}
-                  />
+                  <div className="absolute inset-0 z-0" style={{ transform: isCloudNoImage && selectedFormat === '9:16' ? 'scaleX(-1)' : 'none' }}>
+                    <img
+                      src={currentAssetSrc}
+                      alt={`${selectedCohort.name} backdrop`}
+                      style={{ ...mediaStyle, objectPosition: isCloudNoImage && selectedFormat === '9:16' ? 'right center' : mediaStyle.objectPosition }}
+                      className={`w-full h-full ${selectedCohort.cropRule}`}
+                    />
+                  </div>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/35 pointer-events-none" />
               </div>
 
-              {/* --- NEW APPROACH: EXACT PIXEL PERCENTAGES FOR 9:16 CLOUD NO IMAGE --- */}
+              {/* --- EXACT PIXEL PERCENTAGES FOR 9:16 CLOUD NO IMAGE --- */}
               {isCloudNoImage && selectedFormat === '9:16' ? (
                 <div className="absolute inset-0 z-10 pointer-events-none flex flex-col" style={{ letterSpacing: '0px' }}>
                   
@@ -785,21 +789,21 @@ export default function SocialAssetGenerator() {
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
                       const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                      if (fallback) fallback.style.display = 'flex';
+                      if (fallback) fallback.style.display = 'block';
                     }}
                   />
 
-                  {/* Edge-to-Edge Typography Fallback (Hidden if PNG loads) */}
-                  <div className="absolute left-0 w-full flex-col m-0 p-0" style={{ display: 'none' }}>
+                  {/* Edge-to-Edge Typography Fallback (Fixed nested padding bug) */}
+                  <div className="absolute left-0 w-full m-0 p-0" style={{ display: 'none', top: '38.54cqh' }}>
                     <div style={{ 
-                      position: 'absolute', top: '38.54cqh', left: 0,
                       color: 'white', fontWeight: 500, textAlign: 'left', lineHeight: 1,
                       fontSize: '16.2cqi', width: '100%', margin: 0, padding: 0, whiteSpace: 'nowrap'
                     }}>
                       We’re building
                     </div>
+                    {/* Positioned exactly relative to the bottom measurement rule (1161px down) */}
                     <div style={{ 
-                      position: 'absolute', bottom: '39.53cqh', right: '0.8cqi',
+                      position: 'absolute', top: '21.9cqh', right: '0.8cqi',
                       color: 'white', fontWeight: 500, textAlign: 'right', lineHeight: 0.8,
                       fontSize: '32cqi', width: '100%', margin: 0, whiteSpace: 'nowrap'
                     }}>
