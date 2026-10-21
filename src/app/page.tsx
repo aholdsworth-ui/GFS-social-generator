@@ -197,9 +197,9 @@ export default function SocialAssetGenerator() {
      mediaStyle.transform = 'translate(25%, 25%) scale(1.5)';
   } else if (selectedCohort.id === 'cloud') {
      if (selectedFormat === '9:16') {
-         // FLIPPED horizontally and shifted so the rainbow blocks anchor the left edge.
+         // Flipped horizontally, scaled, and translated to firmly anchor the rainbow on the left edge
          mediaStyle.transformOrigin = 'center center';
-         mediaStyle.transform = 'scaleX(-1) scale(1.6) translateX(12%)';
+         mediaStyle.transform = 'scaleX(-1) scale(1.6) translateX(10%)';
      } else if (selectedFormat === '16:9') {
          mediaStyle.transform = 'scaleX(-1) scale(1.15)';
          mediaStyle.transformOrigin = 'center center';
@@ -317,11 +317,11 @@ export default function SocialAssetGenerator() {
           ctx.drawImage(media, -dw/2, -dh/2, dw, dh);
         } else if (selectedCohort.id === 'cloud') {
           if (selectedFormat === '9:16') {
-              // Exact export alignment: flipped and translated to match HTML exactly
-              const scaleBg = 1.8;
+              // Canvas scaling and flipping to match CSS (rainbow blocks anchored left)
+              const scaleBg = 1.6;
               ctx.translate(exportWidth/2, exportHeight/2);
-              ctx.scale(-scaleBg, scaleBg); 
-              const tx = exportWidth * 0.12; // Shift right-side rainbow elements into view
+              ctx.scale(-scaleBg, scaleBg); // Flipped horizontally
+              const tx = exportWidth * 0.10; // Translate to align
               ctx.drawImage(media, -dw/2 + tx, -dh/2, dw, dh);
           } else if (selectedFormat === '16:9') {
               ctx.translate(exportWidth/2, exportHeight/2);
@@ -382,8 +382,8 @@ export default function SocialAssetGenerator() {
         // --- STRICT 9:16 CLOUD NO IMAGE EXPORT ENGINE MATH ---
         if (isCloudNoImage && selectedFormat === '9:16') {
           
-          // 1. Logo & Program: Centered with exact 2x G Spacing
-          const logoH = 50; 
+          // 1. Logo & Program: Centered with exact 2x G Spacing and upsized
+          const logoH = 75; 
           const logoX = exportWidth / 2;
           const logoY = exportHeight * 0.08; 
           
@@ -397,28 +397,27 @@ export default function SocialAssetGenerator() {
           const programGap = logoH * 2; // Exactly 2x G
           const programY = logoY + logoH + programGap;
           ctx.fillStyle = '#FFFFFF';
-          ctx.font = `500 64px "Google Sans Flex", sans-serif`; // Matched scale to left asset
+          ctx.font = `500 75px "Google Sans Flex", sans-serif`; // Matched scale to logo
           ctx.textAlign = 'center';
           ctx.fillText(selectedCohort.name, logoX, programY + 50); 
 
-          // 2. Headline 1: True Edge-to-Edge, strictly left-aligned at X=0 to force W flush
-          // Shifted Y up by 15px (0.40 instead of 0.43)
-          const mainCopyY = exportHeight * 0.40;
-          const h1Text = "We’re building"; // Typographic apostrophe, uncompressed
+          // 2. Headline 1: 15px higher, flush Left (0), and safe 'g'
+          const mainCopyY = exportHeight * 0.385;
+          const h1Text = "We’re building"; // Strict typographic quote U+2019
           
           ctx.font = `500 100px "Google Sans Flex", sans-serif`;
           const baseWidth = ctx.measureText(h1Text).width;
-          const edgeToEdgeSize = 100 * ((exportWidth - 4) / baseWidth); // 4px buffer so 'g' is strictly safe
+          const edgeToEdgeSize = 100 * ((exportWidth - 16) / baseWidth); // 16px buffer to save the 'g'
           
           ctx.font = `500 ${edgeToEdgeSize}px "Google Sans Flex", sans-serif`;
           ctx.textAlign = 'left';
-          ctx.fillText(h1Text, 0, mainCopyY); // Lock to x=0
+          ctx.fillText(h1Text, 0, mainCopyY); // Flush to 0px
 
-          // 3. Headline 2: Faster (Flush right, nudged left by 4px)
+          // 3. Headline 2: Faster (Nudged left 12px)
           const fasterSize = edgeToEdgeSize * 1.85; 
           ctx.font = `500 ${fasterSize}px "Google Sans Flex", sans-serif`;
           ctx.textAlign = 'right';
-          ctx.fillText("faster", exportWidth - 4, mainCopyY + fasterSize * 0.82);
+          ctx.fillText("faster", exportWidth - 12, mainCopyY + fasterSize * 0.82);
 
           // 4. CTA Pill: Centered, glassy asset loading, base flush to 1/4 from bottom (25%)
           const pillW = 378; // 35% of 1080px width
@@ -725,41 +724,41 @@ export default function SocialAssetGenerator() {
 
               {/* --- NEW APPROACH: INLINE EXACT PERCENTAGES FOR 9:16 CLOUD NO IMAGE --- */}
               {isCloudNoImage && selectedFormat === '9:16' ? (
-                <div className="absolute inset-0 z-10 pointer-events-none flex flex-col" style={{ letterSpacing: 'normal' }}>
+                <div className="absolute inset-0 z-10 pointer-events-none flex flex-col" style={{ letterSpacing: '0px' }}>
                   
                   {/* Centered Logo Lockup & STRICT 2x G Spacing */}
                   <div className="absolute top-[8%] left-0 w-full flex flex-col items-center justify-start m-0 p-0">
                     <img 
                       src="/assets/gfs-logo-white.png" 
                       alt="Google for Startups Logo"
-                      style={{ height: '4.6cqi', width: 'auto', display: 'block' }}
+                      style={{ height: '7cqi', width: 'auto', display: 'block' }}
                     />
                     <div style={{ 
-                        color: 'white', fontWeight: 500, fontSize: '6cqi', 
-                        marginTop: '9.2cqi', // Exactly 2x the logo height
+                        color: 'white', fontWeight: 500, fontSize: '7cqi', 
+                        marginTop: '14cqi', // Exactly 2x the 7cqi logo height
                         lineHeight: 1
                     }}>
                       {selectedCohort.name}
                     </div>
                   </div>
 
-                  {/* Edge-to-Edge Typography Container - Anchor 40% (15px higher) */}
-                  <div className="absolute top-[40%] left-0 w-full flex flex-col m-0 p-0">
+                  {/* Edge-to-Edge Typography Container - Anchor 38.5% (15px higher) */}
+                  <div className="absolute top-[38.5%] left-0 w-full flex flex-col m-0 p-0">
                     
-                    {/* We’re building - ZERO padding, Flush Left (0px) */}
+                    {/* We’re building - ZERO padding, Flush Left, 'g' buffered */}
                     <div style={{ 
                       color: 'white', fontWeight: 500, textAlign: 'left', lineHeight: 0.9,
-                      fontSize: '17.3cqi', 
+                      fontSize: '16.5cqi', 
                       width: '100%', margin: 0, padding: 0, whiteSpace: 'nowrap'
                     }}>
                       We’re building
                     </div>
                     
-                    {/* faster - Flush right zero padding, scaled large, nudged 4px left */}
+                    {/* faster - Flush right zero padding, scaled large, nudged slightly left */}
                     <div style={{ 
                       color: 'white', fontWeight: 500, textAlign: 'right', lineHeight: 0.85,
                       fontSize: '32cqi', 
-                      width: '100%', margin: 0, paddingRight: '4px', whiteSpace: 'nowrap'
+                      width: '100%', margin: 0, paddingRight: '1.5cqi', whiteSpace: 'nowrap'
                     }}>
                       faster
                     </div>
